@@ -1,0 +1,91 @@
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Emergent Mind — Prototype</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#111; color:#eee }
+    #chat { width: 800px; margin: 0 auto; background:#222; padding: 12px; border-radius:8px; }
+    .msg { margin:8px 0; padding:8px; border-radius:6px; }
+    .player { background:#0b6; color:#012; text-align:left }
+    .ai { background:#139; color:#fff; text-align:left }
+    #controls { margin-top:10px }
+    #metrics { display:flex; gap:12px; margin-top:8px }
+    .gauge { background:#333; padding:6px; border-radius:6px; min-width:160px; text-align:center }
+    input[type=text] { width:70%; padding:8px }
+    button { padding:8px 12px; margin-left:4px }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>Emergent Mind — Prototype</h2>
+    <div id="history" style="height:420px; overflow:auto; border:1px solid #333; padding:10px; background:#000;"></div>
+    <div id="metrics">
+      <div class="gauge"><div>Curiosity: <span id="curiosity">0.5</span></div></div>
+      <div class="gauge"><div>Confidence: <span id="confidence">0.5</span></div></div>
+      <div class="gauge"><div>Confusion: <span id="confusion">0.5</span></div></div>
+    </div>
+    <div id="controls">
+      <input id="msg" type="text" placeholder="Say something..." />
+      <button id="send">Send</button>
+      <button id="like">👍</button>
+      <button id="dislike">👎</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    let session_id = null;
+    socket.on('connect', () => {
+      socket.emit('start_session', {});
+    });
+
+    socket.on('session_started', (data) => {
+      session_id = data.session_id;
+      appendSystem("Session started: " + session_id);
+    });
+
+    socket.on('ai_response', (data) => {
+      appendAI(data.text);
+      if (data.mental_state) {
+        document.getElementById('curiosity').innerText = data.mental_state.curiosity.toFixed(2);
+        document.getElementById('confidence').innerText = data.mental_state.confidence.toFixed(2);
+        document.getElementById('confusion').innerText = data.mental_state.confusion.toFixed(2);
+      }
+    });
+
+    function appendAI(text){
+      const d = document.createElement('div'); d.className='msg ai'; d.innerText = 'AI: ' + text;
+      document.getElementById('history').appendChild(d);
+    }
+    function appendPlayer(text){
+      const d = document.createElement('div'); d.className='msg player'; d.innerText = 'Player: ' + text;
+      document.getElementById('history').appendChild(d);
+    }
+    function appendSystem(text){
+      const d = document.createElement('div'); d.className='msg'; d.style.opacity=0.7; d.innerText = text;
+      document.getElementById('history').appendChild(d);
+    }
+
+    document.getElementById('send').addEventListener('click', () => {
+      const text = document.getElementById('msg').value;
+      if (!text) return;
+      appendPlayer(text);
+      document.getElementById('msg').value='';
+      socket.emit('player_message', { session_id, text });
+    });
+
+    document.getElementById('like').addEventListener('click', () => {
+      socket.emit('player_message', { session_id, text: '', feedback: 1 });
+      appendSystem("You liked the last AI response.");
+    });
+    document.getElementById('dislike').addEventListener('click', () => {
+      socket.emit('player_message', { session_id, text: '', feedback: -1 });
+      appendSystem("You disliked the last AI response.");
+    });
+  </script>
+</body>
+</html>
