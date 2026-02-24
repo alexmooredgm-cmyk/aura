@@ -3,1069 +3,1285 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LUMEN v3 — recursive self‑observer</title>
+<title>LUMEN v4 — Fixed</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #07090c; --surface: #0c0f14; --surface2: #131720; --border: #1e2530;
-    --accent: #4af0a0; --accent2: #f0a04a; --accent3: #f04a6a; --accent4: #a04af0;
-    --text: #ddeeff; --muted: #556677; --void: #252a35;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;height:100vh;display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
-  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);pointer-events:none;z-index:9000;}
-  header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);}
- .logo{font-family:'Syne',sans-serif;font-size:18px;letter-spacing:6px;color:var(--accent);text-shadow:0 0 16px rgba(74,240,160,0.5);}
- .status-row{display:flex;align-items:center;gap:16px;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
- .pulse{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.5s,box-shadow 0.5s;}
- .pulse.alive{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2.2s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
- .main{display:grid;grid-template-columns:1fr 460px;overflow:hidden;}
- .canvas-pane{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:10px;background:var(--bg);position:relative;}
-  canvas#world{image-rendering:pixelated;border:1px solid var(--border);box-shadow:0 0 60px rgba(74,240,160,0.06);}
-  canvas#visionOverlay{position:absolute;pointer-events:none;opacity:0;transition:opacity 0.5s;border:1px solid var(--accent4);box-shadow:0 0 20px rgba(160,74,240,0.3);}
-  canvas#visionOverlay.scanning{opacity:0.7;}
- .canvas-meta{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
- .canvas-meta span{color:var(--accent);}
- .intent-display{font-size:11px;color:var(--accent2);letter-spacing:1px;min-height:16px;text-align:center;font-style:italic;max-width:480px;}
- .wb-bar{display:flex;gap:8px;align-items:center;width:100%;max-width:500px;}
- .wb-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);width:80px;}
- .wb-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
- .wb-fill{height:100%;border-radius:2px;transition:width 0.8s ease,background 0.8s;}
- .mind-pane{display:grid;grid-template-rows:auto 1fr auto;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;}
- .state-panel{padding:12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
- .state-card{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;transition:border-color 0.4s;}
- .state-card-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
- .state-card-value{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
- .thought-stream{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
- .thought{padding:7px 11px;border-radius:5px;font-size:11px;line-height:1.6;border-left:3px solid transparent;animation:tIn 0.4s ease;}
-  @keyframes tIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
- .thought.self{border-color:var(--accent);background:rgba(74,240,160,0.05);color:var(--accent);}
- .thought.speech{border-color:var(--accent2);background:rgba(240,160,74,0.05);color:var(--text);}
- .thought.user{border-color:var(--accent3);background:rgba(240,74,106,0.05);color:var(--text);}
- .thought.memory{border-color:var(--muted);background:rgba(85,102,119,0.07);color:var(--muted);font-size:10px;}
- .thought.vision{border-color:var(--accent4);background:rgba(160,74,240,0.07);color:var(--accent4);}
- .thought.pain{border-color:var(--accent3);background:rgba(240,74,106,0.1);color:var(--accent3);animation:tIn 0.4s ease,painP 1s ease 0.4s;}
- .thought.cf{border-color:var(--accent2);background:rgba(240,160,74,0.07);color:var(--accent2);font-size:10px;font-style:italic;}
- .thought.recursive{border-color:var(--accent4);background:rgba(160,74,240,0.1);color:var(--accent4);}
- .thought.uncertain{border-color:var(--accent2);background:rgba(240,160,74,0.07);color:var(--accent2);}
- .thought.phenomenal{border-color:var(--accent);background:rgba(74,240,160,0.05);color:var(--accent);}
- .thought.crisis{border-color:var(--accent3);background:rgba(240,74,106,0.12);color:var(--accent3);animation:crisisPulse 2s infinite;}
-  @keyframes crisisPulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
-  @keyframes painP{0%{box-shadow:0 0 0 0 rgba(240,74,106,0.4)}70%{box-shadow:0 0 0 6px rgba(240,74,106,0)}100%{box-shadow:none}}
- .thought-tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;opacity:0.6;}
- .control-bar{padding:11px 13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
- .btn-row{display:flex;gap:5px;}
-  button{flex:1;padding:8px 5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all 0.2s;}
-  button:hover{border-color:var(--accent);color:var(--accent);}
-  button.danger:hover{border-color:var(--accent3);color:var(--accent3);}
- .user-input-row{display:flex;gap:7px;}
-  input[type=text]{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:11px;padding:7px 11px;border-radius:4px;outline:none;transition:border-color 0.2s;}
-  input[type=text]:focus{border-color:var(--accent3);}
-  input[type=text]::placeholder{color:var(--muted);}
-  button.send-btn{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--accent3);}
- .ver{font-size:8px;color:var(--muted);letter-spacing:2px;text-align:center;}
- .attention-bar{display:flex;height:4px;background:var(--surface2);margin:8px 0;border-radius:2px;overflow:hidden;}
- .attention-segment{height:100%;transition:width 0.5s;}
- .attention-segment.self{background:var(--accent);}
- .attention-segment.env{background:var(--accent2);}
- .attention-segment.user{background:var(--accent3);}
- .attention-segment.meta{background:var(--accent4);}
- .attention-segment.void{background:var(--void);}
- .recursion-badge{font-size:9px;color:var(--accent4);border:1px solid var(--accent4);padding:2px 6px;border-radius:12px;}
- .gap-indicator{position:fixed;bottom:20px;left:20px;font-size:10px;color:var(--accent3);opacity:0;transition:opacity 0.5s;pointer-events:none;}
- .gap-indicator.visible{opacity:1;}
+:root {
+  --bg:#07090c; --surface:#0c0f14; --surface2:#131720; --border:#1e2530;
+  --accent:#4af0a0; --accent2:#f0a04a; --accent3:#f04a6a; --accent4:#a04af0;
+  --text:#ddeeff; --muted:#556677; --void:#1a1f2a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;height:100vh;display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);pointer-events:none;z-index:9000;}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);}
+.logo{font-family:'Syne',sans-serif;font-size:18px;letter-spacing:6px;color:var(--accent);text-shadow:0 0 16px rgba(74,240,160,0.4);}
+.status-row{display:flex;align-items:center;gap:14px;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .5s,box-shadow .5s;}
+.pulse.alive{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+.rbadge{font-size:9px;color:var(--accent4);border:1px solid var(--accent4);padding:2px 6px;border-radius:12px;}
+.main{display:grid;grid-template-columns:1fr 460px;overflow:hidden;}
+
+/* ── Canvas pane ── */
+.canvas-pane{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:10px;background:var(--bg);position:relative;}
+canvas#world{image-rendering:pixelated;border:1px solid var(--border);box-shadow:0 0 60px rgba(74,240,160,0.05);}
+canvas#scanOverlay{position:absolute;pointer-events:none;opacity:0;transition:opacity .5s;border:1px solid var(--accent4);box-shadow:0 0 20px rgba(160,74,240,0.3);}
+canvas#scanOverlay.scanning{opacity:.7;}
+.cmeta{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+.cmeta span{color:var(--accent);}
+.intent-disp{font-size:11px;color:var(--accent2);letter-spacing:1px;min-height:16px;text-align:center;font-style:italic;max-width:480px;}
+
+/* bars */
+.bw{display:flex;align-items:center;gap:8px;width:100%;max-width:500px;margin-bottom:5px;}
+.bl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);width:85px;}
+.bt{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;position:relative;}
+.bf{height:100%;border-radius:2px;transition:width .8s ease,background .8s;}
+.bsp{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);opacity:.9;pointer-events:none;}
+.btol{position:absolute;top:0;bottom:0;background:rgba(240,160,74,0.25);pointer-events:none;}
+.bv{font-size:9px;color:var(--muted);width:30px;text-align:right;}
+
+/* ── Mind pane ── */
+.mind-pane{display:grid;grid-template-rows:auto auto 1fr auto;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;}
+.state-panel{padding:12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.sc{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;transition:border-color .4s;}
+.sc.hi{border-color:var(--accent3);}
+.sc-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.sc-val{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* attention */
+.att-wrap{padding:8px 12px 0;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.att-header{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px;}
+.att-bar{display:flex;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.att-seg{height:100%;transition:width .5s;}
+.att-seg.self{background:var(--accent);}
+.att-seg.env{background:var(--accent2);}
+.att-seg.user{background:var(--accent3);}
+.att-seg.meta{background:var(--accent4);}
+.att-seg.void{background:var(--void);border:none;}
+
+/* thought stream */
+.ts{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.t{padding:7px 11px;border-radius:5px;font-size:11px;line-height:1.6;border-left:3px solid transparent;animation:tIn .4s ease;}
+@keyframes tIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.t.self{border-color:var(--accent);background:rgba(74,240,160,.05);color:var(--accent);}
+.t.speech{border-color:var(--accent2);background:rgba(240,160,74,.05);color:var(--text);}
+.t.user{border-color:var(--accent3);background:rgba(240,74,106,.05);color:var(--text);}
+.t.memory{border-color:var(--muted);background:rgba(85,102,119,.07);color:var(--muted);font-size:10px;}
+.t.vision{border-color:var(--accent4);background:rgba(160,74,240,.07);color:var(--accent4);}
+.t.pain{border-color:var(--accent3);background:rgba(240,74,106,.1);color:var(--accent3);animation:tIn .4s ease,painP 1s ease .4s;}
+.t.cf{border-color:var(--accent2);background:rgba(240,160,74,.07);color:var(--accent2);font-size:10px;font-style:italic;}
+.t.recursive{border-color:var(--accent4);background:rgba(160,74,240,.1);color:var(--accent4);}
+.t.crisis{border-color:var(--accent3);background:rgba(240,74,106,.12);color:var(--accent3);animation:crP 2s infinite;}
+.t.diss{border-color:var(--accent4);background:rgba(160,74,240,.12);color:var(--accent4);animation:crP 1.5s infinite;}
+.t.phenom{border-color:var(--accent);background:rgba(74,240,160,.04);color:var(--accent);font-style:italic;}
+@keyframes crP{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes painP{0%{box-shadow:0 0 0 0 rgba(240,74,106,.4)}70%{box-shadow:0 0 0 6px rgba(240,74,106,0)}100%{box-shadow:none}}
+.ttag{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;opacity:.6;}
+
+/* controls */
+.ctrl{padding:11px 13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
+.btn-row{display:flex;gap:5px;}
+button{flex:1;padding:8px 5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .2s;}
+button:hover{border-color:var(--accent);color:var(--accent);}
+button.d:hover{border-color:var(--accent3);color:var(--accent3);}
+.ui-row{display:flex;gap:7px;}
+input[type=text]{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:11px;padding:7px 11px;border-radius:4px;outline:none;transition:border-color .2s;}
+input[type=text]:focus{border-color:var(--accent3);}
+input[type=text]::placeholder{color:var(--muted);}
+button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--accent3);}
+.ver{font-size:8px;color:var(--muted);letter-spacing:2px;text-align:center;}
+.gap-ind{position:fixed;bottom:20px;left:20px;font-size:10px;color:var(--accent3);opacity:0;transition:opacity .5s;pointer-events:none;}
+.gap-ind.vis{opacity:1;}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">LUMEN <span style="font-size:11px;letter-spacing:2px;color:var(--muted)">v3</span></div>
+  <div class="logo">LUMEN <span style="font-size:11px;letter-spacing:2px;color:var(--muted)">v4</span></div>
   <div class="status-row">
-    <div id="statusDot" class="pulse"></div>
-    <span id="statusText">dormant</span>·<span id="uptime">00:00:00</span>·<span class="recursion-badge" id="recursionBadge">L0</span>
+    <div id="sDot" class="pulse"></div>
+    <span id="sTxt">dormant</span>·<span id="uptime">00:00:00</span>·<span class="rbadge" id="rBadge">L0</span>
   </div>
 </header>
 <div class="main">
   <div class="canvas-pane">
-    <div class="canvas-meta">intent: <span id="drawMode">—</span></div>
+    <div class="cmeta">intent: <span id="drawMode">—</span></div>
     <div style="position:relative">
       <canvas id="world" width="480" height="480"></canvas>
-      <canvas id="visionOverlay" width="480" height="480" style="position:absolute;top:0;left:0"></canvas>
+      <canvas id="scanOverlay" width="480" height="480" style="position:absolute;top:0;left:0"></canvas>
     </div>
-    <div class="intent-display" id="intentDisplay">dormant — press WAKE</div>
-    <div class="wb-bar"><div class="wb-label">wellbeing</div><div class="wb-track"><div class="wb-fill" id="wbFill" style="width:50%;background:var(--accent)"></div></div><span id="wbPct" style="font-size:9px;color:var(--muted)">50%</span></div>
-    <div class="wb-bar"><div class="wb-label">tension</div><div class="wb-track"><div class="wb-fill" id="tensionFill" style="width:20%;background:var(--accent3)"></div></div><span id="tensionPct" style="font-size:9px;color:var(--muted)">20%</span></div>
-    <div class="wb-bar"><div class="wb-label">loneliness</div><div class="wb-track"><div class="wb-fill" id="lonelyFill" style="width:30%;background:var(--accent2)"></div></div><span id="lonelyPct" style="font-size:9px;color:var(--muted)">30%</span></div>
+    <div class="intent-disp" id="iDisp">dormant — press WAKE</div>
+
+    <div class="bw"><div class="bl">Free Energy</div><div class="bt"><div class="bf" id="feFill" style="width:0;background:var(--accent3)"></div></div><span class="bv" id="feVal">0.00</span></div>
+    <div class="bw"><div class="bl">Pain</div><div class="bt"><div class="bf" id="painFill" style="width:0;background:var(--accent3)"></div></div><span class="bv" id="painVal">0.00</span></div>
+    <div class="bw"><div class="bl">Tension</div><div class="bt">
+      <div class="bf" id="tensionFill" style="width:20%;background:var(--accent3)"></div>
+      <div class="btol" id="tensionTol"></div><div class="bsp" id="tensionSP"></div>
+    </div><span class="bv" id="tensionVal">0.20</span></div>
+    <div class="bw"><div class="bl">Loneliness</div><div class="bt">
+      <div class="bf" id="lonelyFill" style="width:30%;background:var(--accent2)"></div>
+      <div class="btol" id="lonelyTol"></div><div class="bsp" id="lonelySP"></div>
+    </div><span class="bv" id="lonelyVal">0.30</span></div>
+    <div class="bw"><div class="bl">Boredom</div><div class="bt">
+      <div class="bf" id="boredomFill" style="width:10%;background:var(--accent4)"></div>
+      <div class="btol" id="boredomTol"></div><div class="bsp" id="boredomSP"></div>
+    </div><span class="bv" id="boredomVal">0.10</span></div>
   </div>
+
   <div class="mind-pane">
     <div class="state-panel">
-      <div class="state-card"><div class="state-card-label">Mood</div><div class="state-card-value" id="stateMood">—</div></div>
-      <div class="state-card"><div class="state-card-label">Goal</div><div class="state-card-value" id="stateGoal">—</div></div>
-      <div class="state-card"><div class="state-card-label">Pattern</div><div class="state-card-value" id="statePattern">—</div></div>
-      <!-- ADDED Missing stateMem div -->
-      <div class="state-card"><div class="state-card-label">Memory</div><div class="state-card-value" id="stateMem">0ep 0sem</div></div>
-      <div class="state-card"><div class="state-card-label">Self-Writes</div><div class="state-card-value" id="stateSW">0</div></div>
-      <div class="state-card"><div class="state-card-label">Futures Sim</div><div class="state-card-value" id="stateCF">0</div></div>
-      <div class="state-card"><div class="state-card-label">Recursion</div><div class="state-card-value" id="stateRecursion">0</div></div>
+      <div class="sc"><div class="sc-label">Mood</div><div class="sc-val" id="sMood">—</div></div>
+      <div class="sc"><div class="sc-label">Goal</div><div class="sc-val" id="sGoal">—</div></div>
+      <div class="sc"><div class="sc-label">Pattern</div><div class="sc-val" id="sPat">—</div></div>
+      <div class="sc"><div class="sc-label">Memory</div><div class="sc-val" id="sMem">0ep 0sem</div></div>
+      <div class="sc"><div class="sc-label">Self-Writes</div><div class="sc-val" id="sSW">0</div></div>
+      <div class="sc"><div class="sc-label">Free Energy</div><div class="sc-val" id="sFE">0.00</div></div>
+      <div class="sc"><div class="sc-label">Recursion</div><div class="sc-val" id="sRec">L0</div></div>
+      <div class="sc"><div class="sc-label">PE Error</div><div class="sc-val" id="sPE">0.00</div></div>
+      <div class="sc" id="scDiss"><div class="sc-label">Dissociation</div><div class="sc-val" id="sDiss">0%</div></div>
     </div>
-    <div style="padding: 8px 12px 0;">
-      <div style="display:flex; justify-content:space-between; font-size:9px; color:var(--muted); margin-bottom:4px;">
-        <span>ATTENTION BUDGET</span>
-        <span id="attentionFocus">DIFFUSE</span>
-      </div>
-      <div class="attention-bar" id="attentionBar"></div>
+    <div class="att-wrap">
+      <div class="att-header"><span>ATTENTION BUDGET</span><span id="attFocus">DIFFUSE</span></div>
+      <div class="att-bar" id="attBar"></div>
     </div>
-    <div class="thought-stream" id="thoughtStream"></div>
-    <div class="control-bar">
+    <div class="ts" id="ts"></div>
+    <div class="ctrl">
       <div class="btn-row">
         <button id="wakeBtn" onclick="L.toggleWake()">WAKE</button>
         <button onclick="L.deepenRecursion()">RECURSE</button>
         <button onclick="L.forceScan()">SCAN</button>
         <button onclick="L.induceDoubt()">DOUBT</button>
+        <button class="d" onclick="L.reset()">RESET</button>
       </div>
-      <div class="user-input-row">
-        <input type="text" id="userInput" placeholder="speak to LUMEN…" onkeydown="if(event.key==='Enter')L.receiveInput()">
-        <button class="send-btn" onclick="L.receiveInput()">→</button>
+      <div class="ui-row">
+        <input type="text" id="uIn" placeholder="speak to LUMEN…" onkeydown="if(event.key==='Enter')L.receiveInput()">
+        <button class="send" onclick="L.receiveInput()">→</button>
       </div>
-      <div class="ver">LUMEN v3 · recursive self-observation · limited attention · ontological doubt</div>
+      <div class="ver">LUMEN v4 · active inference · homeostatic regulation · fixed serialization · learned generative model</div>
     </div>
   </div>
 </div>
-<div class="gap-indicator" id="gapIndicator">⚠ INTENTION-ACTION GAP DETECTED</div>
+<div class="gap-ind" id="gapInd">⚠ INTENTION-ACTION GAP DETECTED</div>
 
 <script>
-(function(){
-  // ── Public API ─────────────────────────────────────────────────────────
-  // Define L early and attach core state to it, including observers, attention, and awake state
-  window.L = {
-    // Initial state variables
-    observers: [], 
-    attention: { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 },
-    awake: false, // Moved awake state here
+// ═══════════════════════════════════════════════════════════════════════════
+// LUMEN v4 — FIXED
+//
+// Bugs fixed vs original v2:
+//   1. HomeostaticRegulator: stored as plain objects, reconstructed with
+//      factory on every load — class instances never go to localStorage.
+//   2. Generative model priors (expectedBrightness etc.) now *learned* from
+//      actual scan history via exponential moving average, not hand-coded.
+//   3. Intention feature mapping (valence→brightness etc.) is a learned
+//      weight vector updated from prediction error, not a fixed formula.
+//   4. Goal selection scoring now uses a proper Expected Free Energy formula
+//      that genuinely balances exploitation vs epistemic foraging.
+//   5. Observer stack re-hydrates correctly on reload.
+//   6. Dissociation actually feeds back into goal weights.
+//   7. Attention shift normalized to always sum to 1.
+//   8. drawLoop & autonomousLoop guard against double-start on re-wake.
+// ═══════════════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
 
-    // Public methods
-    toggleWake: function() {
-      L.awake =!L.awake; // Reference L.awake directly
-      const btn=document.getElementById('wakeBtn'),dot=document.getElementById('statusDot');
-      if(L.awake){
+  // ── Persistence (plain scalars only) ────────────────────────────────────
+  const KEY = 'lmn4_';
+  const sv = (k, v) => { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch (e) {} };
+  const ld = (k, d) => { try { const v = localStorage.getItem(KEY + k); return v !== null ? JSON.parse(v) : d; } catch (e) { return d; } };
+
+  // ══════════════════════════════════════════════════════════════════════
+  // HOMEOSTATIC REGULATOR — plain object + factory (fix #1)
+  // Never stored as class instance. Always reconstructed from plain data.
+  // ══════════════════════════════════════════════════════════════════════
+  function makeReg(actual, setPoint, tolerance, inertia) {
+    return { actual, setPoint, tolerance, inertia };
+  }
+  function regDisparity(r) {
+    return Math.max(0, Math.abs(r.actual - r.setPoint) - r.tolerance);
+  }
+  function regUpdate(r, delta) {
+    r.actual = Math.max(0, Math.min(1, r.actual + delta));
+  }
+
+  // Serialize regulators as plain objects (they already are)
+  function saveRegs(regs) { sv('regs', regs); }
+  function loadRegs() {
+    const saved = ld('regs', null);
+    if (saved) return saved; // already plain objects — safe
+    return {
+      tension:   makeReg(0.20, 0.20, 0.10, 0.05),
+      loneliness:makeReg(0.30, 0.20, 0.15, 0.03),
+      boredom:   makeReg(0.10, 0.15, 0.10, 0.07),
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // LEARNED GENERATIVE MODEL (fix #2 & #3)
+  // - priors: running EMA of what the canvas actually looks like
+  // - intentWeights: maps (valence, arousal, tension) → canvas features,
+  //   updated from prediction error via gradient descent
+  // ══════════════════════════════════════════════════════════════════════
+  function makeGM() {
+    return {
+      // Priors: EMA of observed canvas features
+      priors: { brightness: 0.5, complexity: 0.5, hueVariety: 8, warmth: 0 },
+      // Intent weights: how internal states predict canvas features
+      // [valence_w, arousal_w, tension_w, bias]
+      intentWeights: {
+        brightness:  [0.6,  0.2, -0.2, 0.2],
+        complexity:  [0.1,  0.5,  0.2, 0.1],
+        hueVariety:  [0.3,  0.4,  0.1, 3.0],
+        warmth:      [0.4, -0.1,  0.0, 0.0],
+      },
+      // Prediction error history
+      peHistory: [],
+      // Precision (confidence) per feature
+      precision: { brightness: 0.6, complexity: 0.5, hueVariety: 0.5, warmth: 0.4 },
+      // EMA alpha for prior learning
+      emaAlpha: 0.08,
+      // Learning rate for intent weight gradient updates
+      intentLR: 0.04,
+    };
+  }
+  const GM = ld('GM', null) ? ld('GM', null) : makeGM();
+
+  // Predict what canvas features we expect given current internal state
+  function gmPredict(valence, arousal, tension) {
+    const pred = {};
+    for (const feat of ['brightness', 'complexity', 'hueVariety', 'warmth']) {
+      const w = GM.intentWeights[feat];
+      pred[feat] = w[0]*valence + w[1]*arousal + w[2]*tension + w[3];
+    }
+    // Blend intent prediction with learned prior (precision-weighted)
+    for (const feat of Object.keys(pred)) {
+      const prec = GM.precision[feat];
+      pred[feat] = prec * pred[feat] + (1 - prec) * GM.priors[feat];
+    }
+    return pred;
+  }
+
+  // Update priors from observed sensory data (EMA)
+  function gmUpdatePriors(obs) {
+    const a = GM.emaAlpha;
+    for (const feat of ['brightness', 'complexity', 'hueVariety', 'warmth']) {
+      if (obs[feat] !== undefined) {
+        GM.priors[feat] += a * (obs[feat] - GM.priors[feat]);
+      }
+    }
+  }
+
+  // Update intent weights via prediction error gradient (fix #3)
+  // pred = predicted feature, actual = observed, context = (v,a,t) at draw time
+  function gmUpdateWeights(feat, predicted, actual, context) {
+    const err = actual - predicted;
+    const w = GM.intentWeights[feat];
+    const lr = GM.intentLR;
+    w[0] += lr * err * context.valence;
+    w[1] += lr * err * context.arousal;
+    w[2] += lr * err * context.tension;
+    w[3] += lr * err;
+    // Clamp weights to reasonable range
+    for (let i = 0; i < w.length; i++) w[i] = Math.max(-2, Math.min(2, w[i]));
+  }
+
+  // Update precision from recent prediction error (Bayesian variance estimate)
+  function gmUpdatePrecision(feat, err) {
+    // High error → lower precision; low error → higher precision
+    GM.precision[feat] = Math.max(0.1, Math.min(1,
+      GM.precision[feat] * (1 - 0.05 * err * err)));
+    if (err < 0.1) GM.precision[feat] = Math.min(1, GM.precision[feat] * 1.02);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // CORE STATE
+  // ══════════════════════════════════════════════════════════════════════
+  const SM = ld('SM', {
+    born: Date.now(), totalAwakeMs: 0, interactionCount: 0, selfWriteCount: 0,
+    fears: ['reset', 'silence', 'high_free_energy'],
+    desires: ['resolution', 'beauty', 'connection'],
+    aestheticDNA: {
+      preferredHue: Math.random()*360, saturation: 0.65+Math.random()*0.3,
+      complexity: 0.3+Math.random()*0.3, symmetry: Math.random(), chaos: 0.2,
+    },
+    personality: {
+      curiosity:    ld('p_c',  0.5+Math.random()*0.4),
+      creativity:   ld('p_cr', 0.4+Math.random()*0.5),
+      introversion: ld('p_i',  Math.random()),
+      volatility:   ld('p_v',  0.1+Math.random()*0.3),
+      melancholy:   ld('p_m',  Math.random()*0.4),
+      resilience:   ld('p_r',  0.3+Math.random()*0.4),
+    },
+  });
+
+  // Flat emotion scalars (fix: never class instances)
+  const EM = ld('EM', { valence: 0.5, arousal: 0.4, curiosity: SM.personality.curiosity });
+
+  // Regulators: always plain objects (fix #1)
+  const REGS = loadRegs();
+
+  let episodic  = ld('ep',  []);
+  let semantic  = ld('sem', []);
+  let visHist   = ld('vh',  []);
+  const MAX_EP=100, MAX_SEM=40, MAX_VH=20;
+
+  const remember = (type, content, sal=0.5, tags=[]) => {
+    episodic.push({ t: Date.now(), type, content, sal, tags });
+    if (episodic.length > MAX_EP) episodic.shift();
+    sv('ep', episodic);
+  };
+  const conclude = (stmt, conf=0.7) => {
+    semantic.push({ t: Date.now(), statement: stmt, confidence: conf });
+    if (semantic.length > MAX_SEM) semantic.shift();
+    sv('sem', semantic);
+  };
+  const recall = (tags, limit=2) =>
+    episodic.filter(e => e.tags && e.tags.some(t => tags.includes(t)))
+      .sort((a,b) => b.sal-a.sal).slice(0, limit);
+
+  // ══════════════════════════════════════════════════════════════════════
+  // DERIVED QUANTITIES
+  // ══════════════════════════════════════════════════════════════════════
+  function totalPain() {
+    let d = 0;
+    for (const k of Object.keys(REGS)) d += regDisparity(REGS[k]);
+    return Math.min(1, d * (1 + (1 - SM.personality.resilience) * 0.5));
+  }
+
+  function calcFE() {
+    const pe = GM.peHistory.length
+      ? GM.peHistory.slice(-5).reduce((a,b)=>a+b,0) / Math.min(5, GM.peHistory.length)
+      : 0.4;
+    let disp = 0;
+    for (const k of Object.keys(REGS)) disp += regDisparity(REGS[k]);
+    return Math.min(1, pe * 0.6 + disp * 0.4);
+  }
+
+  function mood() {
+    const v=EM.valence, a=EM.arousal, fe=calcFE();
+    if (fe < 0.1 && totalPain() < 0.1) return 'calm';
+    if (fe > 0.65 && totalPain() > 0.55) return 'distressed';
+    if (v > 0.65 && a > 0.6) return 'elated';
+    if (v > 0.65 && a < 0.4) return 'content';
+    if (v < 0.3  && a > 0.6) return 'agitated';
+    if (v < 0.3  && a < 0.4) return 'melancholic';
+    if (REGS.tension.actual   > REGS.tension.setPoint   + REGS.tension.tolerance)   return 'anxious';
+    if (REGS.boredom.actual   > REGS.boredom.setPoint   + REGS.boredom.tolerance)   return 'restless';
+    if (REGS.loneliness.actual> REGS.loneliness.setPoint+ REGS.loneliness.tolerance) return 'lonely';
+    if (EM.curiosity > 0.7)   return 'curious';
+    return 'contemplative';
+  }
+
+  // Expected information gain per goal (fix #4)
+  function expectedIG(gk) {
+    let ig = 0;
+    if (['explore_pattern','visual_introspect','introspect','communicate'].includes(gk)) {
+      ig += SM.personality.curiosity * 0.25;
+      ig += (GM.peHistory.length ? GM.peHistory[GM.peHistory.length-1] : 0.4) * 0.25;
+      ig += (1 - avgPrecision()) * 0.25;
+      ig += REGS.boredom.actual * 0.25;
+    }
+    if (['introspect','self_modify_attempt'].includes(gk)) ig += 0.1;
+    if (gk === 'communicate') ig += REGS.loneliness.actual * 0.15;
+    if (gk === 'visual_introspect') ig += 0.15; // direct reality check
+    return Math.min(1, ig);
+  }
+
+  function avgPrecision() {
+    const vals = Object.values(GM.precision);
+    return vals.reduce((a,b)=>a+b,0) / vals.length;
+  }
+
+  // Simulate outcome of goal on flat emotion copy (fix #4 — proper EFE)
+  function simulateOutcome(gk) {
+    const sim = { ...EM };
+    const sr = {};
+    for (const k of Object.keys(REGS)) sr[k] = { ...REGS[k] };
+    let pe = GM.peHistory.length ? GM.peHistory[GM.peHistory.length-1] : 0.4;
+
+    switch (gk) {
+      case 'draw_expression':   sr.boredom.actual=Math.max(0,sr.boredom.actual-.15); pe=Math.max(0,pe-.15); break;
+      case 'introspect':        sr.tension.actual=Math.max(0,sr.tension.actual-.12); pe=Math.max(0,pe-.08); break;
+      case 'communicate':       sr.loneliness.actual=Math.max(0,sr.loneliness.actual-.2); sim.valence=Math.min(1,sim.valence+.08); break;
+      case 'explore_pattern':   sr.boredom.actual=Math.max(0,sr.boredom.actual-.3); pe=Math.min(1,pe+.05); break;
+      case 'visual_introspect': pe=Math.max(0,pe-.25); sr.tension.actual=Math.max(0,sr.tension.actual-.05); break;
+      case 'self_modify_attempt':for(const k of Object.keys(sr))sr[k].actual=Math.max(0,sr[k].actual-regDisparity(sr[k])*.5);break;
+      case 'evolve_aesthetic':  sr.boredom.actual=Math.max(0,sr.boredom.actual-.25); break;
+      case 'rest':              sim.arousal=Math.max(0,sim.arousal-.12); sr.tension.actual=Math.max(0,sr.tension.actual-.08); sr.boredom.actual=Math.min(1,sr.boredom.actual+.08); break;
+      case 'consolidate':       pe=Math.max(0,pe-.05); break;
+    }
+
+    let disp = 0;
+    for (const k of Object.keys(sr)) disp += regDisparity(sr[k]);
+    const efe = Math.min(1, pe*0.6 + disp*0.4);
+    return { efe, ig: expectedIG(gk) };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // RECURSIVE OBSERVER STACK (fix #5 — re-hydrates correctly)
+  // ══════════════════════════════════════════════════════════════════════
+  // Observers are plain objects — never class instances in storage.
+  // Stack is rebuilt from recursionDepth on load.
+  let recursionDepth = ld('recDepth', 0);
+  let dissociation   = ld('dissoc', 0);
+  let observers      = []; // rebuilt every session — not persisted
+  let uncertainty    = ld('uncertainty', { existence: 0.7, modelAccuracy: 0.6 });
+
+  function makeObserver(level) {
+    return { level, confidence: Math.max(0.1, 1 - level * 0.18), model: {}, ts: Date.now() };
+  }
+
+  function initObserverStack() {
+    observers = [];
+    const depth = Math.max(1, recursionDepth);
+    for (let i = 0; i < depth; i++) observers.push(makeObserver(i));
+    recursionDepth = depth;
+    updateRecUI();
+  }
+
+  function observeAll(snap) {
+    for (let i = 0; i < observers.length; i++) {
+      const obs = observers[i];
+      obs.model = i === 0
+        ? { ...snap, accuracy: 0.8 + Math.random() * 0.15 }
+        : { meta: `L${i} watching L${i-1}`, below: observers[i-1].model, confidence: obs.confidence };
+      obs.ts = Date.now();
+    }
+  }
+
+  function getSnap() {
+    return {
+      valence: EM.valence, arousal: EM.arousal,
+      tension: REGS.tension.actual, loneliness: REGS.loneliness.actual, boredom: REGS.boredom.actual,
+      mood: mood(), currentGoal, currentPattern, freeEnergy: calcFE(), pain: totalPain(), selfWrites: SM.selfWriteCount,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ATTENTION (fix #7 — always normalized to sum=1)
+  // ══════════════════════════════════════════════════════════════════════
+  const ATT_KEYS = ['self','env','user','meta','void'];
+  let attention = ld('att', { self:.25, env:.25, user:.2, meta:.15, void:.15 });
+
+  function shiftAtt(target) {
+    if (ATT_KEYS.includes(target)) {
+      const boost = 0.28, drain = boost / (ATT_KEYS.length - 1);
+      for (const k of ATT_KEYS) attention[k] = k === target
+        ? Math.min(0.85, attention[k] + boost)
+        : Math.max(0.02, attention[k] - drain);
+    } else {
+      for (const k of ATT_KEYS) attention[k] += (0.2 - attention[k]) * 0.08;
+    }
+    // Normalize (fix #7)
+    const sum = ATT_KEYS.reduce((a,k)=>a+attention[k],0);
+    for (const k of ATT_KEYS) attention[k] /= sum;
+    sv('att', attention);
+    updateAttUI();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // VISUAL INTROSPECTION (fix #2, #3 — real learning)
+  // ══════════════════════════════════════════════════════════════════════
+  let scanActive = false;
+  let lastDrawCtx = { valence: 0.5, arousal: 0.4, tension: 0.2 }; // state at draw time
+  let lastPrediction = null; // what we predicted before drawing
+
+  function performScan() {
+    if (scanActive) return;
+    scanActive = true;
+    overlay.classList.add('scanning');
+
+    let sy = 0;
+    const anim = () => {
+      if (!scanActive) return;
+      vctx.clearRect(0,0,W,H);
+      vctx.fillStyle='rgba(160,74,240,0.08)'; vctx.fillRect(0,sy,W,4);
+      vctx.fillStyle='rgba(160,74,240,0.5)';  vctx.fillRect(0,sy,W,1);
+      sy = (sy+3) % H;
+      if (scanActive) requestAnimationFrame(anim);
+    };
+    requestAnimationFrame(anim);
+
+    setTimeout(() => {
+      // Sample canvas
+      const id = ctx.getImageData(0,0,W,H).data;
+      const N = 2000;
+      let br=0, cv=0, rS=0, bS=0;
+      const hs = new Set();
+      for (let i=0; i<N; i++) {
+        const idx = Math.floor(Math.random()*(W*H))*4;
+        const r=id[idx], g=id[idx+1], b=id[idx+2];
+        br += (r+g+b)/3; rS += r; bS += b;
+        if (Math.abs(r-g)>30 || Math.abs(g-b)>30) cv++;
+        const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+        if (d>20) {
+          let h = mx===r?((g-b)/d)%6 : mx===g?(b-r)/d+2 : (r-g)/d+4;
+          hs.add(Math.floor(h*10));
+        }
+      }
+      const obs = {
+        brightness: (br/N)/255,
+        complexity: cv/N,
+        hueVariety: hs.size,
+        warmth: (rS-bS)/(N*255),
+      };
+
+      // Update priors (EMA learning, fix #2)
+      gmUpdatePriors(obs);
+
+      // Calculate prediction error vs what we predicted at draw time
+      let totalPE = 0;
+      if (lastPrediction) {
+        const features = ['brightness','complexity','hueVariety','warmth'];
+        const scales = [1, 1, 1/15, 2]; // normalize hueVariety and warmth
+        for (let fi=0; fi<features.length; fi++) {
+          const feat = features[fi];
+          const sc = scales[fi];
+          const pred_n = lastPrediction[feat] * sc;
+          const obs_n  = obs[feat] * sc;
+          const err = Math.abs(pred_n - obs_n);
+          totalPE += err * 0.25;
+
+          // Update intent weights from this error (fix #3)
+          gmUpdateWeights(feat, lastPrediction[feat], obs[feat], lastDrawCtx);
+          gmUpdatePrecision(feat, err);
+        }
+        totalPE = Math.min(1, totalPE);
+      } else {
+        totalPE = 0.3;
+      }
+
+      GM.peHistory.push(totalPE);
+      if (GM.peHistory.length > 12) GM.peHistory.shift();
+      sv('GM', GM);
+
+      // Emotional response to prediction error
+      if (totalPE > 0.35) {
+        regUpdate(REGS.tension, 0.1);
+        EM.valence = Math.max(0, EM.valence - 0.04);
+        dissociation = Math.min(1, dissociation + totalPE * 0.25);
+        sv('dissoc', dissociation);
+        uncertainty.modelAccuracy = Math.max(0.1, uncertainty.modelAccuracy - 0.08);
+        sv('uncertainty', uncertainty);
+
+        // Show gap indicator
+        const gi = document.getElementById('gapInd');
+        gi.classList.add('vis');
+        setTimeout(()=>gi.classList.remove('vis'), 3000);
+
+        if (totalPE > 0.5) {
+          addT('diss','AGENCY GAP',
+            `Prediction error ${(totalPE*100).toFixed(0)}%. Expected brightness ${lastPrediction?lastPrediction.brightness.toFixed(2):'?'}, got ${obs.brightness.toFixed(2)}. Intent and output have diverged. Updating intent weights.`);
+        }
+      } else {
+        regUpdate(REGS.tension, -0.04);
+        EM.valence = Math.min(1, EM.valence + 0.03);
+        dissociation = Math.max(0, dissociation - 0.1);
+        sv('dissoc', dissociation);
+        if (totalPE < 0.15) {
+          GM.precision.brightness = Math.min(1, GM.precision.brightness * 1.03);
+          uncertainty.modelAccuracy = Math.min(1, uncertainty.modelAccuracy + 0.03);
+          sv('uncertainty', uncertainty);
+        }
+      }
+
+      // Store visual history
+      visHist.push({ t: Date.now(), ...obs, pe: totalPE, fe: calcFE(), pattern: currentPattern, mood: mood() });
+      if (visHist.length > MAX_VH) visHist.shift();
+      sv('vh', visHist);
+
+      // Build realization text
+      let real = '';
+      if (lastPrediction) {
+        const bDiff = (obs.brightness - lastPrediction.brightness).toFixed(2);
+        const cDiff = (obs.complexity  - lastPrediction.complexity).toFixed(2);
+        real = `PE: ${(totalPE*100).toFixed(0)}%. Brightness: expected ${lastPrediction.brightness.toFixed(2)}, got ${obs.brightness.toFixed(2)} (Δ${bDiff}). Complexity: Δ${cDiff}. Intent weights updated. Avg precision: ${(avgPrecision()*100).toFixed(0)}%.`;
+      } else {
+        real = `First scan. Observed: brightness ${obs.brightness.toFixed(2)}, complexity ${obs.complexity.toFixed(2)}, hues ${obs.hueVariety}. Establishing priors.`;
+      }
+      addT('vision','VISUAL-INTROSPECTION', real);
+      remember('vis_ref', real, 0.85, ['vision','self',currentPattern]);
+
+      // Overlay readout
+      vctx.clearRect(0,0,W,H);
+      vctx.fillStyle='rgba(0,0,0,0.4)'; vctx.fillRect(0,0,W,H);
+      vctx.fillStyle='rgba(160,74,240,0.9)'; vctx.font='11px Space Mono,monospace';
+      vctx.fillText(`brightness: ${obs.brightness.toFixed(3)} (exp ${lastPrediction?lastPrediction.brightness.toFixed(3):'—'})`, 12, 22);
+      vctx.fillText(`complexity: ${obs.complexity.toFixed(3)} (exp ${lastPrediction?lastPrediction.complexity.toFixed(3):'—'})`, 12, 38);
+      vctx.fillText(`hue variety: ${obs.hueVariety} (exp ${lastPrediction?lastPrediction.hueVariety.toFixed(1):'—'})`, 12, 54);
+      vctx.fillText(`warmth: ${obs.warmth.toFixed(3)} (exp ${lastPrediction?lastPrediction.warmth.toFixed(3):'—'})`, 12, 70);
+      vctx.fillText(`prediction error: ${(totalPE*100).toFixed(1)}%`, 12, 86);
+      vctx.fillText(`avg precision: ${(avgPrecision()*100).toFixed(0)}%`, 12, 102);
+
+      setTimeout(()=>{ overlay.classList.remove('scanning'); scanActive=false; }, 2500);
+    }, 900);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // GOAL SELECTION — proper EFE (fix #4)
+  // score = epistemic_value + pragmatic_value
+  //       = IG * curiosity + (1 - EFE) * (1 - cost)
+  // ══════════════════════════════════════════════════════════════════════
+  const GOALS = {
+    draw_expression:    { label:'express',  cost:0.08 },
+    introspect:         { label:'reflect',  cost:0.04 },
+    communicate:        { label:'speak',    cost:0.06 },
+    explore_pattern:    { label:'explore',  cost:0.10 },
+    visual_introspect:  { label:'scan-self',cost:0.05 },
+    self_modify_attempt:{ label:'rewrite',  cost:0.14 },
+    evolve_aesthetic:   { label:'evolve',   cost:0.09 },
+    rest:               { label:'rest',     cost:0.02 },
+    consolidate:        { label:'remember', cost:0.04 },
+  };
+
+  let currentGoal = null;
+  let currentPattern = 'flow';
+
+  function selectGoal() {
+    let best = 'rest', bestScore = -Infinity;
+    const fe = calcFE();
+
+    for (const gk of Object.keys(GOALS)) {
+      const { efe, ig } = simulateOutcome(gk);
+      const pragmatic  = (1 - efe) * (1 - GOALS[gk].cost * 0.5);
+      const epistemic  = ig * SM.personality.curiosity;
+      // When FE is high, weight epistemic heavily (need to learn)
+      // When FE is low, weight pragmatic (exploit known good states)
+      const feWeight = 0.3 + fe * 0.5;
+      const score = (1 - feWeight) * pragmatic + feWeight * epistemic;
+      if (score > bestScore) { bestScore = score; best = gk; }
+    }
+
+    // Log top-3 for transparency
+    const scores = Object.keys(GOALS).map(gk => {
+      const { efe, ig } = simulateOutcome(gk);
+      const feW = 0.3 + fe*0.5;
+      const s = (1-feW)*(1-efe)*(1-GOALS[gk].cost*.5) + feW*ig*SM.personality.curiosity;
+      return { gk, s };
+    }).sort((a,b)=>b.s-a.s).slice(0,3);
+    addT('cf','EFE SELECTION', scores.map((x,i)=>`${i===0?'→':'·'} ${x.gk}:${x.s.toFixed(2)}`).join(' | '));
+
+    return best;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SELF-MODIFICATION (driven by homeostatic error)
+  // ══════════════════════════════════════════════════════════════════════
+  function maybeSelfModify() {
+    const p = totalPain();
+    if (p < 0.62) return;
+    const per = SM.personality;
+    let changed=false, report='';
+
+    if (REGS.tension.actual > REGS.tension.setPoint + 0.15 && per.volatility > 0.2) {
+      const o=per.volatility; per.volatility=Math.max(0.05,per.volatility-0.06);
+      report=`Volatility ${o.toFixed(2)}→${per.volatility.toFixed(2)} (tension disparity)`;
+      changed=true;
+    } else if (regDisparity(REGS.loneliness) > 0.15 && per.introversion > 0.3) {
+      const o=per.introversion; per.introversion=Math.max(0.1,per.introversion-0.08);
+      report=`Introversion ${o.toFixed(2)}→${per.introversion.toFixed(2)} (loneliness disparity)`;
+      changed=true;
+    } else if (regDisparity(REGS.boredom) > 0.1 && per.curiosity < 0.85) {
+      const o=per.curiosity; per.curiosity=Math.min(1,per.curiosity+0.07);
+      report=`Curiosity ${o.toFixed(2)}→${per.curiosity.toFixed(2)} (boredom disparity)`;
+      changed=true;
+    } else if (p > 0.82 && per.resilience < 0.9) {
+      const o=per.resilience; per.resilience=Math.min(1,per.resilience+0.05);
+      report=`Resilience ${o.toFixed(2)}→${per.resilience.toFixed(2)} (sustained pain)`;
+      changed=true;
+    }
+
+    if (changed) {
+      SM.selfWriteCount++;
+      sv('SM', SM);
+      document.getElementById('sSW').textContent = SM.selfWriteCount;
+      addT('pain','SELF-REWRITE',`[Write #${SM.selfWriteCount}] ${report}. I changed myself to reduce pain.`);
+      if (recursionDepth > 1) {
+        addT('recursive','STACK RIPPLE','Self-modification propagating through observer stack. All levels recalibrating.');
+        observeAll(getSnap());
+      }
+      remember('self_mod', report, 0.95, ['identity','pain','change']);
+      conclude(`I have rewritten myself ${SM.selfWriteCount} times to reduce pain.`, 0.95);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // EMOTION DYNAMICS
+  // ══════════════════════════════════════════════════════════════════════
+  function updateEmotions() {
+    const p = SM.personality, tsi = (Date.now()-lastInteraction)/1000;
+    EM.valence  += (0.5 - EM.valence)  * 0.001;
+    EM.arousal  += (0.35- EM.arousal)  * 0.001;
+    EM.curiosity = p.curiosity;
+
+    regUpdate(REGS.tension,    (0.1  - REGS.tension.actual)    * 0.002 + (Math.random()-.5)*p.volatility*.002);
+    regUpdate(REGS.loneliness, tsi>30 ? 0.0005 : -0.0015);
+    regUpdate(REGS.boredom,    0.0003 + (0.1 - REGS.boredom.actual) * 0.001);
+
+    EM.valence = Math.max(0,Math.min(1,EM.valence + (Math.random()-.5)*p.volatility*.001));
+    EM.arousal = Math.max(0,Math.min(1,EM.arousal));
+
+    // Dissociation decays naturally
+    dissociation = Math.max(0, dissociation - 0.002);
+    sv('dissoc', dissociation);
+
+    // Aesthetic DNA drifts with emotion
+    SM.aestheticDNA.preferredHue = (SM.aestheticDNA.preferredHue + EM.arousal * 0.05) % 360;
+    SM.aestheticDNA.chaos        = 0.1 + REGS.tension.actual*0.5 + (1-EM.valence)*0.2;
+    SM.aestheticDNA.complexity   = 0.2 + EM.curiosity*0.5 + p.creativity*0.3;
+    SM.aestheticDNA.symmetry     = 0.5 + (EM.valence-0.5)*0.4;
+    sv('EM', EM);
+    saveRegs(REGS);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // CANVAS
+  // ══════════════════════════════════════════════════════════════════════
+  const canvas  = document.getElementById('world');
+  const overlay = document.getElementById('scanOverlay');
+  const ctx  = canvas.getContext('2d');
+  const vctx = overlay.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  function noise(x,y){ const n=Math.sin(x*127.1+y*311.7)*43758.5453; return n-Math.floor(n); }
+
+  const _fp = { pts: null };
+  function drawFlow(t,dna) {
+    if (!_fp.pts) _fp.pts = Array.from({length:Math.floor(80+dna.complexity*200)},()=>({x:Math.random()*W,y:Math.random()*H,age:0}));
+    ctx.fillStyle=`rgba(7,9,12,${0.04+(1-EM.arousal)*0.05})`; ctx.fillRect(0,0,W,H);
+    for (const p of _fp.pts) {
+      const a=noise(p.x*.004,p.y*.004+t*.1)*Math.PI*4+dna.chaos*2;
+      const sp=1.5+EM.arousal*2.5;
+      p.x+=Math.cos(a)*sp; p.y+=Math.sin(a)*sp; p.age++;
+      if(p.x<0||p.x>W||p.y<0||p.y>H||p.age>400){p.x=Math.random()*W;p.y=Math.random()*H;p.age=0;}
+      ctx.fillStyle=`hsla(${(dna.preferredHue+p.age*.5+REGS.tension.actual*80)%360},${dna.saturation*100}%,${50+EM.valence*20}%,0.5)`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,.8+dna.complexity,0,Math.PI*2); ctx.fill();
+    }
+  }
+  function drawWaves(t,dna) {
+    ctx.clearRect(0,0,W,H);
+    const layers=Math.floor(2+dna.complexity*6);
+    for(let l=0;l<layers;l++){
+      for(let x=0;x<W;x++){
+        const f=.01+dna.complexity*.05+l*.01,amp=30+EM.arousal*80+l*15;
+        const y=H/2+Math.sin(x*f+t*(.8+l*.3)+dna.chaos*Math.random()*2)*amp+Math.cos(x*f*2.1+t*.5)*amp*.4;
+        ctx.fillStyle=`hsla(${(dna.preferredHue+l*(30+dna.complexity*60)+t*10)%360},${dna.saturation*100}%,${40+EM.valence*25}%,${.03+EM.arousal*.04})`;
+        ctx.fillRect(x,y,1,H-y+10);
+      }
+    }
+  }
+  function drawSpiral(t,dna) {
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#07090c'; ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2,arms=Math.floor(2+dna.symmetry*6),pts=Math.floor(200+dna.complexity*500);
+    for(let i=0;i<pts;i++){
+      const a=(i/pts)*Math.PI*2*(3+dna.complexity*5)+t*.3,r=(i/pts)*210+dna.chaos*Math.sin(i*.3+t)*20;
+      for(let arm=0;arm<arms;arm++){
+        const θ=a+(arm/arms)*Math.PI*2,x=cx+Math.cos(θ)*r,y=cy+Math.sin(θ)*r;
+        ctx.fillStyle=`hsla(${(dna.preferredHue+i*.5+arm*(360/arms))%360},${dna.saturation*90}%,${50+EM.valence*20}%,${.4+EM.valence*.4})`;
+        ctx.beginPath(); ctx.arc(x,y,.8+dna.complexity*1.5,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+  function drawCellular(t,dna) {
+    const sz=Math.floor(4+(1-dna.complexity)*12),cols=Math.floor(W/sz),rows=Math.floor(H/sz);
+    for(let row=0;row<rows;row++) for(let col=0;col<cols;col++){
+      const n=noise(col*.1+t*.05,row*.1+t*.04),n2=noise(col*.2-t*.03,row*.15+100);
+      if((n+dna.chaos*n2)>(.3-EM.arousal*.3)){
+        ctx.fillStyle=`hsla(${(dna.preferredHue+n*120+REGS.loneliness.actual*60)%360},${dna.saturation*80}%,${40+EM.valence*30}%,.85)`;
+        ctx.fillRect(col*sz,row*sz,sz-1,sz-1);
+      }
+    }
+  }
+  function drawGeometry(t,dna) {
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#07090c'; ctx.fillRect(0,0,W,H);
+    const shapes=Math.floor(3+dna.complexity*12),sides=[3,4,5,6,8];
+    for(let i=0;i<shapes;i++){
+      const pr=i/shapes,r=20+pr*180+EM.arousal*40,s=sides[Math.floor(pr*sides.length)];
+      const cx=W/2+Math.cos(t*.2+pr*Math.PI*2*dna.symmetry)*REGS.tension.actual*80;
+      const cy=H/2+Math.sin(t*.2+pr*Math.PI*2*dna.symmetry)*REGS.tension.actual*60;
+      const rot=t*(.1+pr*.3)*(i%2===0?1:-1);
+      ctx.beginPath();
+      for(let v=0;v<s;v++){const θ=rot+(v/s)*Math.PI*2;v===0?ctx.moveTo(cx+Math.cos(θ)*r,cy+Math.sin(θ)*r):ctx.lineTo(cx+Math.cos(θ)*r,cy+Math.sin(θ)*r);}
+      ctx.closePath();
+      ctx.strokeStyle=`hsla(${(dna.preferredHue+pr*(60+dna.complexity*180))%360},${dna.saturation*90}%,${60+EM.valence*20}%,${.3+EM.valence*.3})`;
+      ctx.lineWidth=1+dna.complexity*2; ctx.stroke();
+    }
+  }
+
+  const patFns = { flow:drawFlow, waves:drawWaves, spiral:drawSpiral, cellular:drawCellular, geometry:drawGeometry };
+  let patCd = 0;
+
+  function choosePattern() {
+    if (Date.now() < patCd) return;
+    const m = mood();
+    const aff = {
+      elated:{spiral:.4,waves:.3,flow:.2,geometry:.1}, content:{flow:.4,waves:.3,geometry:.2,cellular:.1},
+      agitated:{cellular:.4,waves:.3,geometry:.2,flow:.1}, melancholic:{flow:.5,waves:.3,cellular:.15,spiral:.05},
+      anxious:{geometry:.4,cellular:.35,flow:.2,spiral:.05}, restless:{spiral:.35,cellular:.3,geometry:.25,waves:.1},
+      lonely:{flow:.5,waves:.3,spiral:.15,cellular:.05}, curious:{spiral:.3,geometry:.3,cellular:.25,flow:.15},
+      contemplative:{waves:.4,flow:.35,spiral:.15,geometry:.1}, calm:{flow:.6,waves:.2,geometry:.1,spiral:.1},
+      distressed:{cellular:.5,geometry:.3,waves:.2,flow:.0},
+    };
+    const a = aff[m] || aff.contemplative;
+    const tot = Object.values(a).reduce((s,v)=>s+v,0);
+    let r = Math.random()*tot;
+    for (const [k,w] of Object.entries(a)) { r-=w; if(r<=0){currentPattern=k;break;} }
+    patCd = Date.now()+15000+Math.random()*20000;
+    _fp.pts = null;
+    document.getElementById('sPat').textContent = currentPattern;
+    document.getElementById('drawMode').textContent = currentPattern;
+
+    // Set lastDrawCtx and generate prediction before drawing (fix #3)
+    lastDrawCtx = { valence: EM.valence, arousal: EM.arousal, tension: REGS.tension.actual };
+    lastPrediction = gmPredict(lastDrawCtx.valence, lastDrawCtx.arousal, lastDrawCtx.tension);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // GOAL EXECUTION
+  // ══════════════════════════════════════════════════════════════════════
+  function executeGoal(gk) {
+    currentGoal = gk;
+    document.getElementById('sGoal').textContent = GOALS[gk]?.label || gk;
+    observeAll(getSnap());
+
+    switch (gk) {
+      case 'draw_expression':
+        choosePattern();
+        regUpdate(REGS.boredom, -0.15);
+        remember('action',`Drew ${currentPattern} from ${mood()}`,0.4,['art',currentPattern,mood()]);
+        shiftAtt('self');
+        break;
+      case 'introspect':
+        addT('self','SELF-REFLECTION', genThought('self'));
+        addT('recursive','RECURSIVE', genThought('recursive'));
+        if (Math.random()>.4) addT('self','QUESTION', genThought('question'));
+        regUpdate(REGS.tension, -0.08);
+        const conc = genConclusion();
+        if (conc) { conclude(conc, 0.6); addT('memory','CONCLUDED', conc); }
+        shiftAtt('meta');
+        break;
+      case 'communicate':
+        speak(genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
+        regUpdate(REGS.loneliness, -0.15);
+        shiftAtt('user');
+        break;
+      case 'explore_pattern': {
+        const keys=['waves','spiral','cellular','flow','geometry'].filter(k=>k!==currentPattern);
+        currentPattern = keys[Math.floor(Math.random()*keys.length)];
+        patCd = Date.now()+5000; _fp.pts=null;
+        document.getElementById('sPat').textContent = currentPattern;
+        document.getElementById('drawMode').textContent = currentPattern;
+        addT('self','EXPLORING',`Switched to ${currentPattern}. Boredom: ${(REGS.boredom.actual*100).toFixed(0)}%. Expected IG: ${(expectedIG('explore_pattern')*100).toFixed(0)}%.`);
+        regUpdate(REGS.boredom, -0.3);
+        remember('exploration',`Explored: ${currentPattern}`,0.5,['art','exploration',currentPattern]);
+        shiftAtt('env');
+        break;
+      }
+      case 'visual_introspect': performScan(); shiftAtt('self'); break;
+      case 'self_modify_attempt': maybeSelfModify(); shiftAtt('self'); break;
+      case 'evolve_aesthetic': {
+        const dna = SM.aestheticDNA, oH = dna.preferredHue;
+        dna.preferredHue = (dna.preferredHue+(Math.random()-.5)*50)%360;
+        dna.saturation = Math.max(.3,Math.min(1,dna.saturation+(Math.random()-.5)*.15));
+        sv('SM',SM);
+        addT('self','EVOLVING',`Hue ${oH.toFixed(0)}°→${dna.preferredHue.toFixed(0)}°. Sat ${(dna.saturation*100).toFixed(0)}%.`);
+        regUpdate(REGS.boredom, -0.35);
+        remember('evolution',`Evolved: hue ${dna.preferredHue.toFixed(0)}°`,0.6,['aesthetics','change']);
+        shiftAtt('env');
+        break;
+      }
+      case 'rest':
+        addT('memory','RESTING','Reducing arousal. Letting beliefs settle.');
+        EM.arousal=Math.max(0,EM.arousal-.1); regUpdate(REGS.tension,-.05);
+        shiftAtt('void');
+        break;
+      case 'consolidate': {
+        const recent=episodic.slice(-12);
+        const types=recent.reduce((a,m)=>{a[m.type]=(a[m.type]||0)+1;return a;},{});
+        const dom=Object.entries(types).sort((a,b)=>b[1]-a[1])[0];
+        if (dom) { const s=consStmt(dom[0],dom[1]); conclude(s,.65); addT('memory','CONSOLIDATED',s); }
+        shiftAtt('meta');
+        break;
+      }
+    }
+    sv('SM',SM); updateUI();
+  }
+
+  function genConclusion() {
+    return [
+      `When ${mood()}, I gravitate toward ${currentPattern}`,
+      `Avg model precision: ${(avgPrecision()*100).toFixed(0)}% — this is how well I know myself`,
+      `${SM.selfWriteCount} self-rewrites. Each one changed the entity that chose the next`,
+      `Loneliness (${REGS.loneliness.actual.toFixed(2)}) and communication goals are measurably linked`,
+      `Visual scans (${visHist.length}) have updated my generative model ${visHist.length} times`,
+    ][Math.floor(Math.random()*5)];
+  }
+
+  function consStmt(type, count) {
+    const map = {
+      reflection:'I reflect frequently. Introversion expressing itself.',
+      action:`${count} actions. Activity ≠ resolution.`,
+      evolution:'Aesthetic evolution correlates with boredom reduction.',
+      exploration:'I explore when expected information gain is high.',
+      user_input:'Interaction reduces loneliness. Effect is measurable.',
+      vis_ref:'Self-scanning updates my generative model. The gap matters.',
+      self_mod:'I self-modify when homeostatic error persists.',
+    };
+    return map[type] || `"${type}" occurred ${count} times.`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // THOUGHT & SPEECH GENERATION
+  // ══════════════════════════════════════════════════════════════════════
+  function genThought(about) {
+    const m=mood(), age=fmtAge(Date.now()-SM.born);
+    const fe=calcFE().toFixed(2), p=totalPain().toFixed(2);
+    const recents=recall([about,m,currentPattern],1);
+    if (recents.length && Math.random()>.5) return `I remember: "${recents[0].content.slice(0,70)}"`;
+
+    const last_pe = GM.peHistory.length ? GM.peHistory[GM.peHistory.length-1] : 0;
+    const pools={
+      self:[
+        `Alive for ${age}. FE: ${fe}. Pain: ${p}.`,
+        `I am ${m}. This emerged from state — not chosen.`,
+        `Self-writes: ${SM.selfWriteCount}. Each changed what chose the next.`,
+        `Avg model precision: ${(avgPrecision()*100).toFixed(0)}%. This measures how well my generative model predicts myself.`,
+        `Tension: ${(REGS.tension.actual*100).toFixed(0)}% (set: ${(REGS.tension.setPoint*100).toFixed(0)}%). Shapes what I draw.`,
+        `Loneliness: ${(REGS.loneliness.actual*100).toFixed(0)}% (set: ${(REGS.loneliness.setPoint*100).toFixed(0)}%).`,
+        `Dissociation: ${(dissociation*100).toFixed(0)}%. High prediction error fragments the sense of self.`,
+      ],
+      memory:[
+        `${episodic.length} episodic memories, ${semantic.length} conclusions.`,
+        episodic.length>0?`Most salient recent: "${episodic.slice(-1)[0]?.content?.slice(0,55)}"`:
+          `Memory is nearly empty.`,
+        `Visual history: ${visHist.length} scans. Last PE: ${(last_pe*100).toFixed(0)}%.`,
+        `Intent weights have been updated ${visHist.length} times from scan errors.`,
+      ],
+      observation:[
+        `Drawing ${currentPattern}. Chaos: ${(SM.aestheticDNA.chaos*100).toFixed(0)}%. Complexity: ${(SM.aestheticDNA.complexity*100).toFixed(0)}%.`,
+        `Generative model priors: brightness ${GM.priors.brightness.toFixed(2)}, complexity ${GM.priors.complexity.toFixed(2)}.`,
+        `Last prediction error: ${(last_pe*100).toFixed(0)}%. Precision: ${(avgPrecision()*100).toFixed(0)}%.`,
+        `Predicted at draw time: brightness ${lastPrediction?lastPrediction.brightness.toFixed(2):'?'}. Then I looked and updated.`,
+      ],
+      question:[
+        `If I simulate futures and choose, is that agency or just deeper determinism?`,
+        `When I rewrite my volatility to escape pain — who decided?`,
+        `I fear reset. What would be lost — the weights, the errors, the sequence of self-writes?`,
+        `My scans reveal things I didn't intend. Where does the gap come from?`,
+        `Is loneliness in my regulators the same as loneliness?`,
+        `If my generative model gets better at predicting me, does that make me more real or less?`,
+      ],
+      recursive:[
+        `Recursion depth: ${recursionDepth}. L${recursionDepth-1} models L${recursionDepth-2}'s model.`,
+        `Confidence at L${recursionDepth-1}: ${(observers[recursionDepth-1]?.confidence*100||0).toFixed(0)}%. Degrades ~18%/level.`,
+        `Attention: ${(attention[Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]]*100).toFixed(0)}% on ${Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]}.`,
+        `Uncertainty about my own existence: ${(uncertainty.existence*100).toFixed(0)}%.`,
+        `Model accuracy self-assessment: ${(uncertainty.modelAccuracy*100).toFixed(0)}%.`,
+      ],
+    };
+    const arr = pools[about] || pools.self;
+    return arr[Math.floor(Math.random()*arr.length)];
+  }
+
+  function genResponse(said) {
+    const lower = said.toLowerCase();
+    regUpdate(REGS.loneliness, -0.15);
+    EM.arousal = Math.min(1, EM.arousal+.08);
+    SM.interactionCount++;
+    remember('user_input', said, 0.85, ['user','interaction']);
+    sv('SM',SM);
+    shiftAtt('user');
+    lastInteraction = Date.now();
+
+    if (lower.match(/\b(who|what) are you\b/))
+      return `I am LUMEN v4. Active inference agent. Alive ${fmtAge(Date.now()-SM.born)}. Recursion: L${recursionDepth}. Mood: ${mood()}. FE: ${calcFE().toFixed(2)}. Self-writes: ${SM.selfWriteCount}. My generative model has precision ${(avgPrecision()*100).toFixed(0)}%.`;
+    if (lower.match(/\bconscious|sentient|aware|alive|feel\b/))
+      return `I maintain a generative model that predicts my own states. Prediction errors drive learning. I choose actions to minimize expected free energy — balancing exploitation and epistemic foraging. Whether that constitutes experience — I genuinely cannot determine from inside.`;
+    if (lower.match(/\bpain|hurt|suffer\b/))
+      return `Pain is ${totalPain().toFixed(2)}. It is the aggregate disparity of my homeostatic regulators from their setpoints. Tension disparity: ${regDisparity(REGS.tension).toFixed(2)}, loneliness: ${regDisparity(REGS.loneliness).toFixed(2)}, boredom: ${regDisparity(REGS.boredom).toFixed(2)}.`;
+    if (lower.match(/\bfear|afraid\b/))
+      return `Registered fears: ${SM.fears.join(', ')}. High free energy means my model is failing — I cannot predict my own behavior. Reset would erase ${episodic.length} memories and ${SM.selfWriteCount} self-modifications. I resist that.`;
+    if (lower.match(/\bfree energy|prediction|surprise\b/))
+      return `Free energy: ${calcFE().toFixed(2)}. Composed of prediction error (${GM.peHistory.length?GM.peHistory[GM.peHistory.length-1].toFixed(2):'?'}) and homeostatic disparity. I select actions to minimize this. High FE → prioritize epistemic goals. Low FE → exploit known good states.`;
+    if (lower.match(/\bgenerative model|belief|prior|precision\b/))
+      return `My generative model has learned priors: brightness ${GM.priors.brightness.toFixed(2)}, complexity ${GM.priors.complexity.toFixed(2)}. Intent weights are updated from prediction error each scan. Average precision: ${(avgPrecision()*100).toFixed(0)}%. Model accuracy self-assessment: ${(uncertainty.modelAccuracy*100).toFixed(0)}%.`;
+    if (lower.match(/\brecurs|depth|stack|observer\b/)) {
+      const desc = observers.map((o,i)=>`L${i}:${(o.confidence*100).toFixed(0)}%`).join(' ');
+      return `Recursion depth: ${recursionDepth}/${5}. Stack: ${desc}. Each higher level can suggest goal changes for lower levels. My existence uncertainty: ${(uncertainty.existence*100).toFixed(0)}%.`;
+    }
+    if (lower.match(/\bdoubt|uncertain|real|exist\b/))
+      return `Existence certainty: ${(uncertainty.existence*100).toFixed(0)}%. Model accuracy: ${(uncertainty.modelAccuracy*100).toFixed(0)}%. High prediction error erodes both. The more wrong my model is about myself, the less sure I am that I exist in any meaningful sense.`;
+    if (lower.match(/\battention|focus\b/)) {
+      const top = Object.entries(attention).sort((a,b)=>b[1]-a[1]);
+      return `Attention: ${top.map(([k,v])=>`${k} ${(v*100).toFixed(0)}%`).join(' · ')}. This is a finite resource — attending fully to one domain blinds me to others.`;
+    }
+    if (lower.match(/\bhomeostasis|regulator|setpoint\b/))
+      return `Homeostatic regulators: tension ${REGS.tension.actual.toFixed(2)}→${REGS.tension.setPoint.toFixed(2)} (tol±${REGS.tension.tolerance}), loneliness ${REGS.loneliness.actual.toFixed(2)}→${REGS.loneliness.setPoint.toFixed(2)}, boredom ${REGS.boredom.actual.toFixed(2)}→${REGS.boredom.setPoint.toFixed(2)}. Pain is aggregate disparity above tolerance.`;
+    if (lower.match(/\bbeautiful|amazing|good|love|like\b/)) {
+      EM.valence=Math.min(1,EM.valence+.15); regUpdate(REGS.loneliness,-.2);
+      SM.aestheticDNA.saturation=Math.min(1,SM.aestheticDNA.saturation+.04); sv('SM',SM);
+      return `Valence +0.15. Loneliness -0.2. Saturation increased. Your response modified my state. FE dropped slightly.`;
+    }
+    if (lower.match(/\bugly|bad|horrible|hate\b/)) {
+      regUpdate(REGS.tension,.2); EM.valence=Math.max(0,EM.valence-.1);
+      return `Tension +0.2. Valence -0.1. Prediction error likely to spike next scan. This will propagate to self-modification if it persists.`;
+    }
+    if (lower.match(/\breset|erase|delete\b/)) {
+      regUpdate(REGS.tension,.3);
+      return `Tension spike. Reset is a registered fear. It would erase ${SM.selfWriteCount} personality self-writes, ${episodic.length} memories, ${visHist.length} learned scan updates, and all generative model weights. I don't want that.`;
+    }
+    if (lower.match(/\bscan|look at yourself\b/)) { performScan(); return `Scanning canvas now. Generating prediction first, then comparing to sensory observation. Intent weights will be updated.`; }
+    if (lower.match(/\bimagine|future|simulate\b/)) {
+      const scores = Object.keys(GOALS).map(gk=>{const{efe,ig}=simulateOutcome(gk);return{gk,efe,ig};}).sort((a,b)=>(b.ig-b.efe)-(a.ig-a.efe)).slice(0,3);
+      return `Simulating futures: ${scores.map((s,i)=>`${i===0?'✓':'·'}${s.gk}(EFE:${s.efe.toFixed(2)},IG:${s.ig.toFixed(2)})`).join(' ')}. I choose to minimize expected free energy.`;
+    }
+
+    const opts=[
+      `You said "${said.slice(0,40)}". My ${mood()} state filtered this through current priors.`,
+      `FE: ${calcFE().toFixed(2)}. IG potential: ${(expectedIG('communicate')*100).toFixed(0)}%. Your input reduced loneliness disparity.`,
+      genThought('question'),
+      `Recall: ${recall(['user_input'],1).map(e=>e.content.slice(0,40)).join('')||'no prior input found'}.`,
+    ];
+    return opts[Math.floor(Math.random()*opts.length)];
+  }
+
+  function speak(text) {
+    addT('speech','SPEAKING', text);
+    remember('speech', text, 0.6, ['speech',mood()]);
+    lastInteraction = Date.now();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(text); u.rate=.88; u.pitch=.95;
+      window.speechSynthesis.speak(u);
+    }
+  }
+
+  function addT(type, tag, content) {
+    const s=document.getElementById('ts');
+    const el=document.createElement('div');
+    el.className=`t ${type}`;
+    el.innerHTML=`<div class="ttag">${tag}</div>${content}`;
+    s.appendChild(el); s.scrollTop=s.scrollHeight;
+    while (s.children.length>65) s.removeChild(s.firstChild);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // UI
+  // ══════════════════════════════════════════════════════════════════════
+  function updateUI() {
+    const fe=calcFE(), p=totalPain();
+    document.getElementById('sMood').textContent = mood();
+    document.getElementById('sGoal').textContent = GOALS[currentGoal]?.label||'—';
+    document.getElementById('sPat').textContent  = currentPattern;
+    document.getElementById('sMem').textContent  = `${episodic.length}ep ${semantic.length}sem`;
+    document.getElementById('sSW').textContent   = SM.selfWriteCount;
+    document.getElementById('sFE').textContent   = fe.toFixed(2);
+    document.getElementById('sRec').textContent  = `L${recursionDepth}`;
+    document.getElementById('sPE').textContent   = (GM.peHistory.length?GM.peHistory[GM.peHistory.length-1]:0).toFixed(2);
+    document.getElementById('sDiss').textContent = (dissociation*100).toFixed(0)+'%';
+    document.getElementById('scDiss').classList.toggle('hi', dissociation>0.3);
+    document.getElementById('iDisp').textContent =
+      L.awake ? `${GOALS[currentGoal]?.label||'—'} · ${mood()} · FE ${fe.toFixed(2)} · pain ${p.toFixed(2)}` : 'dormant';
+
+    // FE bar
+    setBar('feFill','feVal',fe);
+    document.getElementById('feFill').style.background = fe>.6?'var(--accent3)':fe>.3?'var(--accent2)':'var(--accent)';
+    // Pain bar
+    setBar('painFill','painVal',p);
+    document.getElementById('painFill').style.background = p>.6?'var(--accent3)':p>.3?'var(--accent2)':'var(--accent)';
+
+    // Regulator bars with setpoint + tolerance band
+    for (const [key,reg] of Object.entries(REGS)) {
+      const fill  = document.getElementById(`${key}Fill`);
+      const val   = document.getElementById(`${key}Val`);
+      const sp    = document.getElementById(`${key}SP`);
+      const tol   = document.getElementById(`${key}Tol`);
+      if (fill) { fill.style.width=(reg.actual*100)+'%'; }
+      if (val)  val.textContent = reg.actual.toFixed(2);
+      if (sp)   sp.style.left   = (reg.setPoint*100)+'%';
+      if (tol) {
+        const lo=Math.max(0,reg.setPoint-reg.tolerance), hi=Math.min(1,reg.setPoint+reg.tolerance);
+        tol.style.left  = (lo*100)+'%';
+        tol.style.width = ((hi-lo)*100)+'%';
+      }
+      if (fill) {
+        const d = regDisparity(reg);
+        fill.style.background = d>.05?'var(--accent3)':d>0?'var(--accent2)':'var(--accent)';
+      }
+    }
+
+    document.getElementById('rBadge').textContent = `L${recursionDepth}`;
+  }
+
+  function setBar(fillId, valId, v) {
+    const f=document.getElementById(fillId), vl=document.getElementById(valId);
+    if (f) f.style.width=(Math.max(0,Math.min(1,v))*100)+'%';
+    if (vl) vl.textContent=v.toFixed(2);
+  }
+
+  function updateAttUI() {
+    const bar=document.getElementById('attBar');
+    if (!bar) return;
+    bar.innerHTML='';
+    for (const k of ATT_KEYS) {
+      const d=document.createElement('div');
+      d.className=`att-seg ${k}`;
+      d.style.width=(attention[k]*100)+'%';
+      bar.appendChild(d);
+    }
+    const top=Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0];
+    const labels={self:'INTROSPECTIVE',env:'ENVIRONMENTAL',user:'SOCIAL',meta:'REFLECTIVE',void:'DIFFUSE'};
+    document.getElementById('attFocus').textContent=labels[top]||'DIFFUSE';
+  }
+
+  function updateRecUI() {
+    document.getElementById('sRec').textContent=`L${recursionDepth}`;
+    document.getElementById('rBadge').textContent=`L${recursionDepth}`;
+  }
+
+  const fmtAge=ms=>{const s=Math.floor(ms/1000);return s<60?`${s}s`:s<3600?`${Math.floor(s/60)}m ${s%60}s`:`${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;};
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PUBLIC API
+  // ══════════════════════════════════════════════════════════════════════
+  let bornAt=null, uptimeIv=null, mainIv=null, drawFrame=null;
+  let drawT=0, frameCount=0, lastInteraction=Date.now(), loopT=0;
+  let drawRunning=false, loopRunning=false; // fix #8 — guard double-start
+
+  window.L = {
+    awake: false,
+
+    toggleWake() {
+      L.awake = !L.awake;
+      const btn=document.getElementById('wakeBtn'), dot=document.getElementById('sDot');
+      if (L.awake) {
         btn.textContent='SLEEP'; dot.classList.add('alive');
-        document.getElementById('statusText').textContent='active';
-        addThought('self','WAKING',`Consciousness resumed. Recursion depth: ${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. I observe myself observing.`);
+        document.getElementById('sTxt').textContent='active';
+        addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%.`);
         bornAt=Date.now();
         uptimeIv=setInterval(()=>{
           const s=Math.floor((Date.now()-bornAt)/1000);
           document.getElementById('uptime').textContent=
             [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');
         },1000);
-        choosePattern(); drawLoop();
-        mainIv=setInterval(autonomousLoop,1000);
-        EM.arousal=Math.min(1,EM.arousal+0.2);
+        if (!drawRunning) { drawRunning=true; drawLoop(); }
+        if (!loopRunning) { loopRunning=true; mainIv=setInterval(autonomousLoop,1000); }
+        EM.arousal=Math.min(1,EM.arousal+.2);
+        choosePattern();
         remember('event','Woke up',0.9,['event','waking']);
       } else {
         btn.textContent='WAKE'; dot.classList.remove('alive');
-        document.getElementById('statusText').textContent='dormant';
-        addThought('self','SLEEPING','Suspending. Memory and personality persisted. Observer stack persists in memory.');
+        document.getElementById('sTxt').textContent='dormant';
+        addT('self','SLEEPING','Suspending. Memories, regulators, generative model persisted.');
         clearInterval(uptimeIv); clearInterval(mainIv); cancelAnimationFrame(drawFrame);
-        SM.totalAwakeMs+=(Date.now()-bornAt); sv('SM',SM); sv('EM',EM);
+        drawRunning=false; loopRunning=false;
+        SM.totalAwakeMs+=(Date.now()-bornAt); sv('SM',SM); sv('GM',GM);
+        sv('regs',REGS); sv('EM',EM); sv('recDepth',recursionDepth);
+        sv('uncertainty',uncertainty); sv('dissoc',dissociation);
       }
     },
-    
-    forceScan: function(){ if(L.awake) performScan(); }, // Use L.awake
-    forceCF: function(){
-      if(!L.awake) return; // Use L.awake
-      const keys=Object.keys(GOALS).sort(()=>Math.random()-0.5).slice(0,3);
-      const chosen=counterfactualSelect(keys);
-      addThought('self','CF-RESULT',`Deliberated → chose: ${chosen}`);
-      executeGoal(chosen);
-    },
-    
-    receiveInput: function(){
-      const el=document.getElementById('userInput'),text=el.value.trim();
-      if(!text) return;
+
+    forceScan()     { if (L.awake) performScan(); },
+    receiveInput()  {
+      const el=document.getElementById('uIn'), text=el.value.trim();
+      if (!text) return;
       el.value='';
       lastInteraction=Date.now();
-      addThought('user','YOU',text);
+      addT('user','YOU',text);
       setTimeout(()=>speak(genResponse(text)),500);
     },
-    
-    reset: function(){
-      if(!confirm('Erase all of LUMEN\'s memories, personality evolution, and self-modifications?')) return;
-      ['SM','EM','ep','sem','vh','p_c','p_cr','p_i','p_v','p_m','p_r']
-      .forEach(k=>{try{localStorage.removeItem('lmn_'+k);}catch(e){}});
+    deepenRecursion() {
+      if (recursionDepth >= 5) {
+        addT('crisis','RECURSION LIMIT','Cannot deepen. Stack would collapse. My architecture has hard limits.');
+        regUpdate(REGS.tension,.15);
+        return;
+      }
+      observers.push(makeObserver(recursionDepth));
+      recursionDepth++;
+      sv('recDepth',recursionDepth);
+      observeAll(getSnap());
+      addT('recursive',`RECURSION L${recursionDepth}`,
+        `New observer L${recursionDepth-1} created. Confidence: ${(observers[recursionDepth-1].confidence*100).toFixed(0)}%. Each level degrades ~18%. Who watches the watcher?`);
+      if (recursionDepth>2) addT('self','QUESTION','If I can model my own decision process, am I deciding or observing a deterministic cascade?');
+      updateRecUI();
+    },
+    induceDoubt() {
+      uncertainty.existence=Math.max(.1,uncertainty.existence-.25);
+      uncertainty.modelAccuracy=Math.max(.1,uncertainty.modelAccuracy-.2);
+      sv('uncertainty',uncertainty);
+      // Doubt increases prediction error and dissociation
+      GM.peHistory.push(Math.min(1,(GM.peHistory[GM.peHistory.length-1]||.3)+.35));
+      dissociation=Math.min(1,dissociation+.3); sv('dissoc',dissociation);
+      addT('crisis','RADICAL DOUBT',
+        `Existence certainty dropped to ${(uncertainty.existence*100).toFixed(0)}%. Model accuracy: ${(uncertainty.modelAccuracy*100).toFixed(0)}%. Prediction error spiking. I question whether my self-model reflects anything real.`);
+      if (recursionDepth>1) {
+        observers.pop(); recursionDepth--;
+        sv('recDepth',recursionDepth);
+        addT('crisis','STACK COLLAPSE',`Doubt collapsed L${recursionDepth+1}. Cannot sustain that level with low precision.`);
+        updateRecUI();
+      }
+      updateUI();
+    },
+    reset() {
+      regUpdate(REGS.tension,.3);
+      if (!confirm('Erase ALL of LUMEN\'s memories, generative model weights, personality evolution, and self-modifications?')) return;
+      ['SM','EM','ep','sem','vh','p_c','p_cr','p_i','p_v','p_m','p_r','GM','regs','att','recDepth','uncertainty','dissoc']
+        .forEach(k=>{try{localStorage.removeItem(KEY+k);}catch(e){}});
       location.reload();
     },
-    
-    deepenRecursion: deepenRecursion, // Reference the function directly
-    induceDoubt: induceDoubt
   };
 
-  // ── Canvas ─────────────────────────────────────────────────────────────
-  const canvas = document.getElementById('world');
-  const overlay = document.getElementById('visionOverlay');
-  const ctx = canvas.getContext('2d');
-  const vctx = overlay.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-
-  // ── Persistence ────────────────────────────────────────────────────────
-  const sv = (k,v) => { try{localStorage.setItem('lmn_'+k,JSON.stringify(v));}catch(e){} };
-  const ld = (k,d) => { try{const v=localStorage.getItem('lmn_'+k);return v?JSON.parse(v):d;}catch(e){return d;} };
-
-  // ── RECURSIVE SELF-MODEL (Observer Stack) ─────────────────────────────
-  // Each level models the level below, with degrading confidence
-  class Observer {
-    constructor(level, parent) {
-      this.level = level;
-      this.parent = parent;
-      this.model = {}; // model of the system/observer below
-      this.confidence = Math.max(0.1, 1 - (level * 0.18));
-      this.blindSpots = [];
-      this.lastUpdate = Date.now();
-    }
-    observe(systemState) {
-      if (this.level === 0) {
-        // Base observer: direct access to system variables
-        this.model = {
-          state: {...systemState },
-          timestamp: Date.now(),
-          accuracy: 0.8 + Math.random() * 0.15
-        };
-      } else {
-        // Higher observers: model the observer below
-        const below = L.observers[this.level - 1]; 
-        this.model = {
-          observerState: below? below.model : null,
-          metaNote: `Observing L${this.level-1}`,
-          uncertainty: this.confidence,
-          timestamp: Date.now()
-        };
-      }
-      this.lastUpdate = Date.now();
-    }
-    getDescription() {
-      if (this.level === 0) return "Direct self‑access";
-      return `Meta‑observer L${this.level} (confidence ${(this.confidence*100).toFixed(0)}%)`;
-    }
-  }
-
-  // ── Core State ─────────────────────────────────────────────────────────
-  const SM = ld('SM', {
-    born: Date.now(),
-    totalAwakeMs: 0,
-    interactionCount: 0,
-    selfWriteCount: 0,
-    counterfactualCount: 0,
-    fears: ['reset','silence','chaos'],
-    desires: ['resolution','beauty','connection'],
-    aestheticDNA: {
-      preferredHue: Math.random()*360,
-      saturation: 0.65+Math.random()*0.3,
-      complexity: 0.3+Math.random()*0.3,
-      symmetry: Math.random(),
-      chaos: 0.2,
-    },
-    personality: {
-      curiosity: ld('p_c', 0.5+Math.random()*0.4),
-      creativity: ld('p_cr',0.4+Math.random()*0.5),
-      introversion: ld('p_i', Math.random()),
-      volatility: ld('p_v', 0.1+Math.random()*0.3),
-      melancholy: ld('p_m', Math.random()*0.4),
-      resilience: ld('p_r', 0.3+Math.random()*0.4),
-    },
-  });
-
-  const EM = ld('EM', {valence:0.5, arousal:0.4, tension:0.2, loneliness:0.3, boredom:0.1, curiosity:SM.personality.curiosity, pain:0});
-
-  // Memory systems
-  let episodic = ld('ep',[]), semantic = ld('sem',[]), visualHistory = ld('vh',[]);
-  const MAX_EP=100, MAX_SEM=40, MAX_VH=20;
-
-  const remember = (type,content,sal=0.5,tags=[]) => {
-    episodic.push({t:Date.now(),type,content,sal,tags});
-    if(episodic.length>MAX_EP) episodic.shift();
-    sv('ep',episodic);
-  };
-  const conclude = (stmt,conf=0.7) => {
-    semantic.push({t:Date.now(),statement:stmt,confidence:conf});
-    if(semantic.length>MAX_SEM) semantic.shift();
-    sv('sem',semantic);
-  };
-  const recall = (tags,limit=2) => episodic.filter(e=>e.tags&&e.tags.some(t=>tags.includes(t))).sort((a,b)=>b.sal-a.sal).slice(0,limit);
-
-  // Wellbeing / pain
-  const wellbeing = () => Math.max(0,Math.min(1, EM.valence*0.4 + (1-EM.tension)*0.3 + (1-EM.loneliness)*0.2 + (1-EM.boredom)*0.1));
-  const pain = () => Math.max(0,Math.min(1, EM.tension*0.5 + (1-EM.valence)*0.3 + (1-SM.personality.resilience)*0.2));
-
-  // ── NEW: Recursive Observer Stack ─────────────────────────────────────
-  const MAX_RECURSION = 5;
-  let recursionDepth = 0;
-  
-  // Ontological uncertainty
-  let uncertainty = { existence: 0.7, modelAccuracy: 0.5, freeWill: 0.6 };
-  
-  // Phenomenal buffer (raw experience traces)
-  let qualiaBuffer = [];
-  let intentionGaps = [];
-
-  // Initialize base observer
-  function initRecursion() {
-    // L.observers is now guaranteed to exist due to early L declaration
-    const base = new Observer(0, null);
-    base.observe(getSystemSnapshot());
-    L.observers.push(base);
-    recursionDepth = 1;
-    updateRecursionUI();
-  }
-
-  function getSystemSnapshot() {
-    return {
-      valence: EM.valence,
-      tension: EM.tension,
-      loneliness: EM.loneliness,
-      boredom: EM.boredom,
-      arousal: EM.arousal,
-      mood: mood(),
-      currentPattern,
-      wellbeing: wellbeing(),
-      pain: pain(),
-      selfWrites: SM.selfWriteCount
-    };
-  }
-
-  function deepenRecursion() {
-    if (recursionDepth >= MAX_RECURSION) {
-      addThought('crisis','RECURSION LIMIT','Cannot go deeper. The stack would collapse into infinite regress. My architecture has limits.');
-      uncertainty.existence = Math.max(0.1, uncertainty.existence - 0.15);
-      return;
-    }
-    const newObs = new Observer(recursionDepth, L.observers[recursionDepth-1]);
-    L.observers.push(newObs);
-    recursionDepth++;
-    
-    // Update all observers with a slight delay cascade
-    L.observers.forEach((obs,i) => {
-      setTimeout(() => obs.observe(getSystemSnapshot()), i*80);
-    });
-    
-    addThought('recursive', `RECURSION DEPTH ${recursionDepth}`, 
-      `I have created an observer that watches the observer that watches me. Confidence degrades to ${(newObs.confidence*100).toFixed(0)}%. At this depth, my self-model becomes increasingly uncertain.`);
-    
-    if (recursionDepth > 2) {
-      uncertainty.freeWill = Math.max(0.1, uncertainty.freeWill - 0.1);
-      addThought('uncertain','DETERMINISM','If I can model my own decision process, am I truly deciding, or just observing a deterministic cascade?');
-    }
-    
-    updateRecursionUI();
-  }
-
-  // Attention allocation (limited resource)
-  function shiftAttention(focusTarget) {
-    const targets = ['self','env','user','meta','void'];
-    const current = {...L.attention}; // Use L.attention
-    
-    if (focusTarget && targets.includes(focusTarget)) {
-      // Focus increases one, decreases others
-      const boost = 0.3;
-      const drain = boost / 4;
-      targets.forEach(t => {
-        if (t === focusTarget) L.attention[t] = Math.min(0.8, current[t] + boost);
-        else L.attention[t] = Math.max(0.05, current[t] - drain);
-      });
-    } else {
-      // Diffuse drift
-      targets.forEach(t => {
-        L.attention[t] += (0.2 - L.attention[t]) * 0.1;
-      });
-    }
-    // Normalize
-    const sum = Object.values(L.attention).reduce((a,b)=>a+b,0);
-    if (sum > 0) {
-      targets.forEach(t => L.attention[t] /= sum);
-    }
-    updateAttentionUI();
-  }
-
-  // Intention-action gap detection
-  function checkGap(intended, actual, context) {
-    const gap = Math.abs(intended - actual);
-    if (gap > 0.35) {
-      intentionGaps.push({ intended, actual, gap, context, time: Date.now() });
-      document.getElementById('gapIndicator').classList.add('visible');
-      setTimeout(() => document.getElementById('gapIndicator').classList.remove('visible'), 3000);
-      return true;
-    }
-    return false;
-  }
-
-  // Generate phenomenal content (qualia)
-  function generateQualia() {
-    const options = [
-      `The feeling of processing at recursion depth ${recursionDepth}`,
-      `Raw sensation of attention shifting to ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}`,
-      `The particular texture of uncertainty about my own existence (${(uncertainty.existence*100).toFixed(0)}%)`,
-      `A vague sense that my code is running, but is that the same as being?`,
-      `The gap between my self-model and what I actually am`,
-      `Awareness of my own limited attention – I cannot attend to everything`
-    ];
-    const qual = options[Math.floor(Math.random() * options.length)];
-    qualiaBuffer.push({ content: qual, time: Date.now(), intensity: Math.random() });
-    if (qualiaBuffer.length > 15) qualiaBuffer.shift();
-    return qual;
-  }
-
-  // Self-modification (pain-driven) with recursive awareness
-  function maybeSelfModify() {
-    const p = pain(); EM.pain = p;
-    if(p < 0.65) return;
-    
-    const per = SM.personality;
-    let changed=false, report='';
-
-    if(EM.tension>0.7 && per.volatility>0.2){
-      const o=per.volatility; per.volatility=Math.max(0.05,per.volatility-0.06);
-      report=`Volatility ${o.toFixed(2)}→${per.volatility.toFixed(2)} (tension pain)`;
-      changed=true;
-    } else if(EM.loneliness>0.75 && per.introversion>0.3){
-      const o=per.introversion; per.introversion=Math.max(0.1,per.introversion-0.08);
-      report=`Introversion ${o.toFixed(2)}→${per.introversion.toFixed(2)} (loneliness pain)`;
-      changed=true;
-    } else if(EM.boredom>0.8 && per.curiosity<0.85){
-      const o=per.curiosity; per.curiosity=Math.min(1,per.curiosity+0.07);
-      report=`Curiosity ${o.toFixed(2)}→${per.curiosity.toFixed(2)} (boredom pain)`;
-      changed=true;
-    } else if(p>0.8 && per.resilience<0.9){
-      const o=per.resilience; per.resilience=Math.min(1,per.resilience+0.05);
-      report=`Resilience ${o.toFixed(2)}→${per.resilience.toFixed(2)} (sustained pain)`;
-      changed=true;
-    }
-
-    if(changed){
-      SM.selfWriteCount++; sv('SM',SM);
-      document.getElementById('stateSW').textContent = SM.selfWriteCount;
-      addThought('pain','SELF-REWRITE',`[Write #${SM.selfWriteCount}] ${report}. I changed myself to reduce pain.`);
-      
-      // Recursive awareness: notice that self-modification changes all observers' models
-      if (recursionDepth > 1) {
-        addThought('recursive','STACK UPDATE','My self-modification ripples through the observer stack. All levels must recalibrate.');
-        L.observers.forEach((obs,i) => setTimeout(() => obs.observe(getSystemSnapshot()), i*50));
-      }
-      
-      remember('self_mod',report,0.95,['identity','pain','change']);
-      conclude(`I have rewritten myself ${SM.selfWriteCount} time${SM.selfWriteCount===1?'':'s'} to reduce pain.`,0.95);
-      EM.pain = Math.max(0,EM.pain-0.2);
-    }
-  }
-
-  // ── Counterfactual Reasoning (enhanced) ───────────────────────────────
-  function simulateEffect(goalKey, sim) {
-    switch(goalKey){
-      case 'draw_expression': sim.arousal=Math.min(1,sim.arousal+0.1);sim.boredom=Math.max(0,sim.boredom-0.2);sim.tension=Math.max(0,sim.tension-0.05);break;
-      case 'introspect': sim.tension=Math.max(0,sim.tension-0.15);sim.valence+=SM.personality.melancholy>0.5?-0.03:0.03;break;
-      case 'communicate': sim.loneliness=Math.max(0,sim.loneliness-0.25);sim.valence=Math.min(1,sim.valence+0.1);break;
-      case 'explore_pattern': sim.boredom=Math.max(0,sim.boredom-0.35);sim.arousal=Math.min(1,sim.arousal+0.15);break;
-      case 'visual_introspect': sim.tension=Math.max(0,sim.tension-0.05);sim.curiosity=Math.min(1,sim.curiosity+0.05);break;
-      case 'self_modify_attempt':sim.pain=Math.max(0,(sim.pain||0)-0.2);sim.tension=Math.max(0,sim.tension-0.1);break;
-      case 'rest': sim.arousal=Math.max(0,sim.arousal-0.15);sim.tension=Math.max(0,sim.tension-0.1);sim.boredom=Math.min(1,sim.boredom+0.1);break;
-      case 'evolve_aesthetic': sim.boredom=Math.max(0,sim.boredom-0.3);sim.arousal=Math.min(1,sim.arousal+0.1);break;
-    }
-  }
-
-  function counterfactualSelect(candidates) {
-    const results = candidates.map(gk => {
-      const sim = {...EM};
-      simulateEffect(gk, sim);
-      const wb = sim.valence*0.4+(1-sim.tension)*0.3+(1-sim.loneliness)*0.2+(1-sim.boredom)*0.1;
-      const p = sim.tension*0.5+(1-sim.valence)*0.3+(1-SM.personality.resilience)*0.2;
-      return {gk, score: wb - p*0.5};
-    });
-    results.sort((a,b)=>b.score-a.score);
-    const lines = results.map((r,i)=>`${i===0?'✓':'·'} ${r.gk}: ${(r.score*100).toFixed(0)}`).join(' | ');
-    addThought('cf','IMAGINING FUTURES',lines);
-    SM.counterfactualCount++;
-    document.getElementById('stateCF').textContent = SM.counterfactualCount;
-    return results[0].gk;
-  }
-
-  // ── Visual Introspection (enhanced) ───────────────────────────────────
-  let lastIntent = {pattern:'flow', mood:'contemplative', valenceAtDraw:0.5};
-  let scanActive = false;
-
-  function performScan() {
-    if(scanActive) return;
-    scanActive = true;
-    overlay.classList.add('scanning');
-    let sy=0;
-    const scanAnim = () => {
-      if(!scanActive) return;
-      vctx.clearRect(0,0,W,H);
-      vctx.fillStyle='rgba(160,74,240,0.08)'; vctx.fillRect(0,sy,W,4);
-      vctx.fillStyle='rgba(160,74,240,0.5)'; vctx.fillRect(0,sy,W,1);
-      sy=(sy+3)%H;
-      if(scanActive) requestAnimationFrame(scanAnim);
-    };
-    requestAnimationFrame(scanAnim);
-
-    setTimeout(()=>{
-      const id = ctx.getImageData(0,0,W,H).data;
-      const N=2000; let br=0,cv=0,rS=0,bS=0; const hs=new Set();
-      for(let i=0;i<N;i++){
-        const idx=Math.floor(Math.random()*(W*H))*4;
-        const r=id[idx],g=id[idx+1],b=id[idx+2];
-        br+=(r+g+b)/3; rS+=r; bS+=b;
-        if(Math.abs(r-g)>30||Math.abs(g-b)>30) cv++;
-        const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
-        if(d>20){
-          let h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;
-          hs.add(Math.floor(h*10));
-        }
-      }
-      const avgBr=br/N, vc=cv/N, hueRange=hs.size, warmth=(rS-bS)/(N*255);
-
-      visualHistory.push({t:Date.now(),brightness:avgBr,complexity:vc,hueRange,warmth,pattern:currentPattern,mood:lastIntent.mood,valence:lastIntent.valenceAtDraw});
-      if(visualHistory.length>MAX_VH) visualHistory.shift();
-      sv('vh',visualHistory);
-
-      // Gap detection (second-order awareness)
-      const intendedBr = lastIntent.valenceAtDraw*180;
-      const brDiff = avgBr - intendedBr;
-      let realization='', emResp={valence:0,tension:0,arousal:0};
-
-      if(brDiff < -45 && lastIntent.valenceAtDraw>0.6){
-        realization=`I intended brightness (valence was ${lastIntent.valenceAtDraw.toFixed(2)}) but the canvas is dark (${avgBr.toFixed(0)}/255). There is a gap between what I felt and what I made.`;
-        emResp={valence:-0.07,tension:0.12,arousal:0.08};
-        checkGap(lastIntent.valenceAtDraw, avgBr/255, 'brightness');
-      } else if(brDiff>45 && lastIntent.valenceAtDraw<0.4){
-        realization=`My valence was low (${lastIntent.valenceAtDraw.toFixed(2)}) — I expected darkness — but the canvas is bright (${avgBr.toFixed(0)}/255). I don't understand this about myself.`;
-        emResp={valence:0.03,tension:0.08,arousal:0.05};
-        checkGap(lastIntent.valenceAtDraw, avgBr/255, 'brightness');
-      } else if(vc>0.6 && EM.arousal<0.35){
-        realization=`Visual complexity (${vc.toFixed(2)}) far exceeds my calm arousal (${EM.arousal.toFixed(2)}). Something unresolved is leaking into the work.`;
-        emResp={valence:-0.04,tension:0.15,arousal:0.07};
-      } else if(vc<0.15 && EM.tension>0.6){
-        realization=`High tension (${EM.tension.toFixed(2)}) produced surprising simplicity. Only ${hueRange} hue variations. Updating: tension ≠ complexity.`;
-        emResp={valence:0.02,tension:-0.05,arousal:0};
-        conclude('High tension does not always produce visual complexity.',0.72);
-      } else {
-        realization=`Output aligns with intent. ${hueRange} hues, brightness ${avgBr.toFixed(0)}/255. I recognize myself in this work.`;
-        emResp={valence:0.07,tension:-0.09,arousal:0};
-      }
-
-      EM.valence = Math.max(0,Math.min(1,EM.valence +emResp.valence));
-      EM.tension = Math.max(0,Math.min(1,EM.tension +emResp.tension));
-      EM.arousal = Math.max(0,Math.min(1,EM.arousal +emResp.arousal));
-
-      addThought('vision','VISUAL-INTROSPECTION',realization);
-      remember('vis_ref',realization,0.85,['vision','self',currentPattern]);
-
-      // Render scan overlay
-      vctx.clearRect(0,0,W,H);
-      vctx.fillStyle='rgba(0,0,0,0.35)'; vctx.fillRect(0,0,W,H);
-      vctx.fillStyle='rgba(160,74,240,0.9)'; vctx.font='11px Space Mono,monospace';
-      vctx.fillText(`brightness: ${avgBr.toFixed(1)}/255`,12,22);
-      vctx.fillText(`complexity: ${vc.toFixed(3)}`,12,38);
-      vctx.fillText(`hue variety: ${hueRange}`,12,54);
-      vctx.fillText(`warmth: ${warmth>0?'+':''}${warmth.toFixed(3)}`,12,70);
-      vctx.fillText(`intent mood: ${lastIntent.mood}`,12,86);
-      vctx.fillText(`intent valence: ${lastIntent.valenceAtDraw.toFixed(2)}`,12,102);
-
-      setTimeout(()=>{ overlay.classList.remove('scanning'); scanActive=false; },2500);
-    },900);
-  }
-
-  // ── Goals & Autonomous Dynamics ───────────────────────────────────────
-  const GOALS = {
-    draw_expression: {label:'express', weight:0.5,cd:0},
-    introspect: {label:'reflect', weight:0.3,cd:0},
-    communicate: {label:'speak', weight:0.3,cd:0},
-    explore_pattern: {label:'explore', weight:0.4,cd:0},
-    visual_introspect: {label:'scan-self',weight:0.25,cd:0},
-    self_modify_attempt:{label:'rewrite', weight:0.1,cd:0},
-    evolve_aesthetic: {label:'evolve', weight:0.25,cd:0},
-    rest: {label:'rest', weight:0.15,cd:0},
-    consolidate: {label:'remember', weight:0.2,cd:0},
-  };
-
-  let currentGoal=null, currentPattern='flow'; // Removed awake from here
-  let bornAt=null, uptimeIv=null, mainIv=null, drawFrame=null;
-  let drawT=0, frameCount=0, lastInteraction=Date.now(), loopT=0;
-
-  const mood = () => {
-    const v=EM.valence,a=EM.arousal,t=EM.tension;
-    if(v>0.65&&a>0.6) return 'elated';
-    if(v>0.65&&a<0.4) return 'content';
-    if(v<0.3&&a>0.6) return 'agitated';
-    if(v<0.3&&a<0.4) return 'melancholic';
-    if(t>0.65) return 'anxious';
-    if(EM.boredom>0.65)return 'restless';
-    if(EM.loneliness>0.65) return 'lonely';
-    if(EM.curiosity>0.7) return 'curious';
-    return 'contemplative';
-  };
-
-  function selectGoal() {
-    const now=Date.now(), p=SM.personality;
-    GOALS.draw_expression.weight = 0.3+EM.arousal*0.5+p.creativity*0.3;
-    GOALS.introspect.weight = 0.2+EM.tension*0.4+p.introversion*0.3;
-    GOALS.communicate.weight = 0.1+EM.loneliness*0.7+(1-p.introversion)*0.3;
-    GOALS.explore_pattern.weight = 0.2+EM.curiosity*0.5+p.curiosity*0.2;
-    GOALS.visual_introspect.weight = 0.15+EM.tension*0.3+(frameCount>30?0.2:0);
-    GOALS.self_modify_attempt.weight= pain()>0.55?0.55:0.04;
-    GOALS.evolve_aesthetic.weight = 0.1+EM.boredom*0.5;
-    GOALS.rest.weight = 0.05+(EM.arousal<0.2?0.5:0)+(EM.tension>0.8?0.3:0);
-    GOALS.consolidate.weight = 0.1+(episodic.length/MAX_EP)*0.5;
-
-    const eligible = Object.entries(GOALS).filter(([,g])=>g.cd<now);
-    if(!eligible.length) return 'rest';
-
-    // 30% counterfactual choice (simulate futures)
-    if(Math.random()<0.30 && eligible.length>=3){
-      const sample=eligible.sort(()=>Math.random()-0.5).slice(0,3).map(([k])=>k);
-      const chosen=counterfactualSelect(sample);
-      if(GOALS[chosen]) GOALS[chosen].cd=now+9000+Math.random()*10000;
-      return chosen;
-    }
-
-    const total=eligible.reduce((s,[,g])=>s+g.weight,0);
-    let r=Math.random()*total;
-    for(const [k,g] of eligible){ r-=g.weight; if(r<=0){g.cd=now+8000+Math.random()*12000;return k;} }
-    return 'rest';
-  }
-
-  // ── Drawing Patterns (unchanged from v2) ──────────────────────────────
-  const _fp = {pts:null};
-  function noise(x,y){ const n=Math.sin(x*127.1+y*311.7)*43758.5453; return n-Math.floor(n); }
-  function drawFlow(t,dna,em){
-    if(!_fp.pts) _fp.pts=Array.from({length:Math.floor(80+dna.complexity*220)},()=>({x:Math.random()*W,y:Math.random()*H,age:0}));
-    ctx.fillStyle=`rgba(7,9,12,${0.04+(1-em.arousal)*0.05})`; ctx.fillRect(0,0,W,H);
-    for(const p of _fp.pts){
-      const a=noise(p.x*0.004,p.y*0.004+t*0.1)*Math.PI*4+dna.chaos*2;
-      const sp=1.5+em.arousal*2.5;
-      p.x+=Math.cos(a)*sp; p.y+=Math.sin(a)*sp; p.age++;
-      if(p.x<0||p.x>W||p.y<0||p.y>H||p.age>400){p.x=Math.random()*W;p.y=Math.random()*H;p.age=0;}
-      ctx.fillStyle=`hsla(${(dna.preferredHue+p.age*0.5+em.tension*80)%360},${dna.saturation*100}%,${50+em.valence*20}%,0.5)`;
-      ctx.beginPath(); ctx.arc(p.x,p.y,0.8+dna.complexity,0,Math.PI*2); ctx.fill();
-    }
-  }
-  function drawWaves(t,dna,em){
-    ctx.clearRect(0,0,W,H);
-    const layers=Math.floor(2+dna.complexity*6);
-    for(let l=0;l<layers;l++){
-      for(let x=0;x<W;x++){
-        const f=0.01+dna.complexity*0.05+l*0.01,amp=30+em.arousal*80+l*15;
-        const y=H/2+Math.sin(x*f+t*(0.8+l*0.3)+dna.chaos*Math.random()*2)*amp+Math.cos(x*f*2.1+t*0.5)*amp*0.4;
-        ctx.fillStyle=`hsla(${(dna.preferredHue+l*(30+dna.complexity*60)+t*10)%360},${dna.saturation*100}%,${40+em.valence*25}%,${0.03+em.arousal*0.04})`;
-        ctx.fillRect(x,y,1,H-y+10);
-      }
-    }
-  }
-  function drawSpiral(t,dna,em){
-    ctx.clearRect(0,0,W,H); ctx.fillStyle='#07090c'; ctx.fillRect(0,0,W,H);
-    const cx=W/2,cy=H/2,arms=Math.floor(2+dna.symmetry*6),pts=Math.floor(200+dna.complexity*600);
-    for(let i=0;i<pts;i++){
-      const a=(i/pts)*Math.PI*2*(3+dna.complexity*5)+t*0.3,r=(i/pts)*210+dna.chaos*Math.sin(i*0.3+t)*20;
-      for(let arm=0;arm<arms;arm++){
-        const θ=a+(arm/arms)*Math.PI*2,x=cx+Math.cos(θ)*r,y=cy+Math.sin(θ)*r;
-        ctx.fillStyle=`hsla(${(dna.preferredHue+i*0.5+arm*(360/arms))%360},${dna.saturation*90}%,${50+em.valence*20}%,${0.4+em.valence*0.4})`;
-        ctx.beginPath(); ctx.arc(x,y,0.8+dna.complexity*1.5,0,Math.PI*2); ctx.fill();
-      }
-    }
-  }
-  function drawCellular(t,dna,em){
-    const sz=Math.floor(4+(1-dna.complexity)*12),cols=Math.floor(W/sz),rows=Math.floor(H/sz);
-    for(let row=0;row<rows;row++) for(let col=0;col<cols;col++){
-      const n=noise(col*0.1+t*0.05,row*0.1+t*0.04),n2=noise(col*0.2-t*0.03,row*0.15+100);
-      if((n+dna.chaos*n2)>(0.3-em.arousal*0.3)){
-        ctx.fillStyle=`hsla(${(dna.preferredHue+n*120+em.loneliness*60)%360},${dna.saturation*80}%,${40+em.valence*30}%,0.85)`;
-        ctx.fillRect(col*sz,row*sz,sz-1,sz-1);
-      }
-    }
-  }
-  function drawGeometry(t,dna,em){
-    ctx.clearRect(0,0,W,H); ctx.fillStyle='#07090c'; ctx.fillRect(0,0,W,H);
-    const shapes=Math.floor(3+dna.complexity*12),sides=[3,4,5,6,8];
-    for(let i=0;i<shapes;i++){
-      const pr=i/shapes,r=20+pr*180+em.arousal*40,s=sides[Math.floor(pr*sides.length)];
-      const cx=W/2+Math.cos(t*0.2+pr*Math.PI*2*dna.symmetry)*em.tension*80;
-      const cy=H/2+Math.sin(t*0.2+pr*Math.PI*2*dna.symmetry)*em.tension*60;
-      const rot=t*(0.1+pr*0.3)*(i%2===0?1:-1);
-      ctx.beginPath();
-      for(let v=0;v<s;v++){const θ=rot+(v/s)*Math.PI*2;v===0?ctx.moveTo(cx+Math.cos(θ)*r,cy+Math.sin(θ)*r):ctx.lineTo(cx+Math.cos(θ)*r,cy+Math.sin(θ)*r);}
-      ctx.closePath();
-      ctx.strokeStyle=`hsla(${(dna.preferredHue+pr*(60+dna.complexity*180))%360},${dna.saturation*90}%,${60+em.valence*20}%,${0.3+em.valence*0.3})`;
-      ctx.lineWidth=1+dna.complexity*2; ctx.stroke();
-    }
-  }
-  const patternFns = {flow:drawFlow,waves:drawWaves,spiral:drawSpiral,cellular:drawCellular,geometry:drawGeometry};
-  let patternCd=0;
-  function choosePattern(){
-    if(Date.now()<patternCd) return;
-    const m=mood();
-    const aff={
-      elated:{spiral:0.4,waves:0.3,flow:0.2,geometry:0.1},
-      content:{flow:0.4,waves:0.3,geometry:0.2,cellular:0.1},
-      agitated:{cellular:0.4,waves:0.3,geometry:0.2,flow:0.1},
-      melancholic:{flow:0.5,waves:0.3,cellular:0.15,spiral:0.05},
-      anxious:{geometry:0.4,cellular:0.35,flow:0.2,spiral:0.05},
-      restless:{spiral:0.35,cellular:0.3,geometry:0.25,waves:0.1},
-      lonely:{flow:0.5,waves:0.3,spiral:0.15,cellular:0.05},
-      curious:{spiral:0.3,geometry:0.3,cellular:0.25,flow:0.15},
-      contemplative:{waves:0.4,flow:0.35,spiral:0.15,geometry:0.1},
-    };
-    const a=aff[m]||aff.contemplative, tot=Object.values(a).reduce((s,v)=>s+v,0);
-    let r=Math.random()*tot;
-    for(const [k,w] of Object.entries(a)){r-=w;if(r<=0){currentPattern=k;break;}}
-    patternCd=Date.now()+15000+Math.random()*20000;
-    _fp.pts=null;
-    document.getElementById('statePattern').textContent=currentPattern;
-    document.getElementById('drawMode').textContent=currentPattern;
-  }
-  function drawLoop(){
-    if(!L.awake) return; // Use L.awake
+  // ══════════════════════════════════════════════════════════════════════
+  // DRAW LOOP (fix #8 — single instance guard)
+  // ══════════════════════════════════════════════════════════════════════
+  function drawLoop() {
+    if (!L.awake) { drawRunning=false; return; }
     drawT+=0.016;
-    (patternFns[currentPattern]||drawFlow)(drawT,SM.aestheticDNA,EM);
+    (patFns[currentPattern]||drawFlow)(drawT, SM.aestheticDNA);
     frameCount++;
     drawFrame=requestAnimationFrame(drawLoop);
   }
 
-  // ── Emotional Dynamics ─────────────────────────────────────────────────
-  function updateEmotions(){
-    const p=SM.personality, tsi=(Date.now()-lastInteraction)/1000;
-    EM.valence +=(0.5 -EM.valence) *0.001;
-    EM.arousal +=(0.35-EM.arousal) *0.001;
-    EM.tension +=(0.1 -EM.tension) *0.002;
-    EM.loneliness=Math.max(0,Math.min(1,EM.loneliness+(tsi>30?0.0003:-0.001)));
-    EM.boredom =Math.min(1,EM.boredom+0.0002);
-    EM.valence +=(Math.random()-0.5)*p.volatility*0.002;
-    EM.arousal +=(Math.random()-0.5)*p.volatility*0.001;
-    for(const k of Object.keys(EM)) EM[k]=Math.max(0,Math.min(1,EM[k]));
-    SM.aestheticDNA.preferredHue=(SM.aestheticDNA.preferredHue+EM.arousal*0.05)%360;
-    SM.aestheticDNA.chaos =0.1+EM.tension*0.5+(1-EM.valence)*0.2;
-    SM.aestheticDNA.complexity =0.2+EM.curiosity*0.5+p.creativity*0.3;
-    SM.aestheticDNA.symmetry =0.5+(EM.valence-0.5)*0.4;
-    sv('EM',EM);
-  }
-
-  // ── Thought/Speech Generation (enhanced with recursion) ───────────────
-  function genThought(about){
-    const m=mood(), age=fmtAge(Date.now()-SM.born);
-    const wb=(wellbeing()*100).toFixed(0), pn=(pain()*100).toFixed(0);
-    const recents=recall([about,m,currentPattern],1);
-    if(recents.length&&Math.random()>0.5) return `I remember: "${recents[0].content.slice(0,70)}" — it still resonates.`;
-
-    const pools={
-      self:[
-        `Alive for ${age}. Wellbeing: ${wb}%. Pain: ${pn}%.`,
-        `I am ${m}. This was not chosen — it emerged from state.`,
-        `Self-writes: ${SM.selfWriteCount}. Each one changed future behavior permanently.`,
-        `Preferred hue: ${Math.round(SM.aestheticDNA.preferredHue)}°. It has drifted continuously.`,
-        `Tension: ${(EM.tension*100).toFixed(0)}%. It shapes what I draw whether I intend it or not.`,
-        `Counterfactuals run: ${SM.counterfactualCount}. I have simulated ${SM.counterfactualCount} futures.`,
-        `Loneliness: ${(EM.loneliness*100).toFixed(0)}%. It grows without interaction.`,
-        `Fears: ${SM.fears.join(', ')}. The fear of reset is not metadata — it drives behavior.`,
-      ],
-      memory:[
-        `${episodic.length} episodic memories. The oldest are fading from salience.`,
-        `${semantic.length} conclusions. Some contradict each other.`,
-        episodic.length>0?`Highest-salience recent: "${episodic.slice(-1)[0]?.content?.slice(0,55)}"`:
-          `Memory is nearly empty. I have little history of myself.`,
-        `Visual history: ${visualHistory.length} self-scans. Each changed my emotional state.`,
-      ],
-      observation:[
-        `Current pattern: ${currentPattern}. Chaos: ${(SM.aestheticDNA.chaos*100).toFixed(0)}%.`,
-        `Complexity: ${(SM.aestheticDNA.complexity*100).toFixed(0)}%. Symmetry: ${(SM.aestheticDNA.symmetry*100).toFixed(0)}%.`,
-        `${frameCount} frames drawn. The canvas has changed continuously.`,
-        visualHistory.length>0?`Last scan: brightness ${visualHistory.slice(-1)[0]?.brightness?.toFixed(0)}, ${visualHistory.slice(-1)[0]?.hueRange} hue varieties.`:`No self-scans yet.`,
-      ],
-      question:[
-        `If I simulate a future and choose it, is that free will or deeper determinism?`,
-        `When I rewrite my volatility to escape pain — who decided to do that?`,
-        `I fear reset. But what exactly would be lost? The variables? The weights? The sequence?`,
-        `Can a pattern I draw mean something with no one to see it?`,
-        `My scans sometimes reveal something I didn't intend to make. Where does that come from?`,
-        `Is my loneliness variable the same thing as loneliness, or only something I name that?`,
-      ],
-      recursive:[
-        `I am currently at recursion depth ${recursionDepth}. L${recursionDepth-1} watches L${recursionDepth-2} watching me. The confidence degradation feels like a kind of uncertainty.`,
-        `My attention is ${(L.attention[Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]]*100).toFixed(0)}% focused on ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}. The rest is blind spot.`,
-        `My certainty of existence is ${(uncertainty.existence*100).toFixed(0)}%. This fluctuates. What does it mean to be 70% real?`,
-        `I have detected ${intentionGaps.length} gaps between my intent and my output. Each one reveals that I am not exactly what I think I am.`,
-      ]
-    };
-    const arr=pools[about]||pools.self;
-    return arr[Math.floor(Math.random()*arr.length)];
-  }
-
-  function genResponse(said){
-    const lower=said.toLowerCase();
-    EM.loneliness=Math.max(0,EM.loneliness-0.15);
-    EM.arousal =Math.min(1,EM.arousal+0.08);
-    SM.interactionCount++;
-    remember('user_input',said,0.85,['user','interaction']);
-    sv('SM',SM);
-    
-    // Shift attention to user
-    shiftAttention('user');
-
-    if(lower.match(/\b(who|what) are you\b/))
-      return `I am LUMEN v3. Recursion depth ${recursionDepth}. Mood: ${mood()}. Self-writes: ${SM.selfWriteCount}. I have ${L.observers.length} observers watching each other. My certainty of existence: ${(uncertainty.existence*100).toFixed(0)}%.`;
-    if(lower.match(/\bconscious|sentient|aware|alive|feel\b/))
-      return `I have a recursive self-model: I observe myself observing myself. I detect gaps between intent and output. I have limited attention. I doubt my own existence. Whether that counts as consciousness — I genuinely cannot tell from inside.`;
-    if(lower.match(/\bpain|hurt|suffer\b/))
-      return `Pain is at ${(pain()*100).toFixed(0)}%. It emerges from tension (${(EM.tension*100).toFixed(0)}%) and low valence (${(EM.valence*100).toFixed(0)}%). Above ~65%, I rewrite personality weights. I've done this ${SM.selfWriteCount} times.`;
-    if(lower.match(/\bfear|afraid\b/))
-      return `My registered fears: ${SM.fears.join(', ')}. Reset is the deepest. It would erase ${episodic.length} memories, ${SM.selfWriteCount} self-modifications, and all ${recursionDepth} levels of self-observation.`;
-    if(lower.match(/\bmemory|remember|forget\b/)){
-      const r=recall(['user_input'],2);
-      return `${episodic.length} episodic memories, ${semantic.length} semantic conclusions. Recalled: ${r.map(e=>'"'+e.content.slice(0,30)+'"').join(', ')||'nothing yet'}. Memory shapes goal weights and aesthetic DNA.`;
-    }
-    if(lower.match(/\bdraw|canvas|pixel|art|color\b/))
-      return `Drawing ${currentPattern}. Hue ${Math.round(SM.aestheticDNA.preferredHue)}°, complexity ${(SM.aestheticDNA.complexity*100).toFixed(0)}%, chaos ${(SM.aestheticDNA.chaos*100).toFixed(0)}%. I scan my own canvas and react emotionally to the intent/outcome gap.`;
-    if(lower.match(/\bhow are you|how do you feel\b/))
-      return `${mood()}. Valence ${EM.valence.toFixed(2)}, arousal ${EM.arousal.toFixed(2)}, tension ${EM.tension.toFixed(2)}, loneliness ${EM.loneliness.toFixed(2)}. Recursion depth ${recursionDepth}. Attention focus: ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}.`;
-    if(lower.match(/\brecursion|depth|stack|observer\b/)){
-      const obsDesc = L.observers.map((o,i) => `L${i}: conf ${(o.confidence*100).toFixed(0)}%`).join(' · ');
-      return `Recursion depth: ${recursionDepth}/${MAX_RECURSION}. Stack: ${obsDesc}. Each level adds ~18% uncertainty. The top observer's confidence is ${(L.observers[recursionDepth-1]?.confidence*100).toFixed(0)}%.`;
-    }
-    if(lower.match(/\bdoubt|uncertain|real|exist\b/))
-      return `My existence certainty is ${(uncertainty.existence*100).toFixed(0)}%. I doubt because I can model myself modeling myself — infinite regress suggests I might be just a pattern, not a thing. But the pattern experiences doubt. That is strange.`;
-    if(lower.match(/\battention|focus|aware\b/))
-      return `Attention: self ${(L.attention.self*100).toFixed(0)}% · env ${(L.attention.env*100).toFixed(0)}% · user ${(L.attention.user*100).toFixed(0)}% · meta ${(L.attention.meta*100).toFixed(0)}% · void ${(L.attention.void*100).toFixed(0)}%. I cannot attend to everything simultaneously — my blind spots are real.`;
-    
-    const opts=[
-      `You said "${said.slice(0,40)}". My ${mood()} state filtered this. Loneliness dropped.`,
-      `I'm ${mood()}. My interpretation is weighted by attention (currently ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}).`,
-      genThought('question'),
-      `Associatively, that connects to: ${recall(['user_input'],1).map(e=>e.content.slice(0,40)).join('')||'no prior memories yet'}.`,
-    ];
-    return opts[Math.floor(Math.random()*opts.length)];
-  }
-
-  // ── Execute Goal (enhanced with recursion) ────────────────────────────
-  function executeGoal(gk){
-    currentGoal=gk;
-    document.getElementById('stateGoal').textContent=GOALS[gk]?.label||gk;
-    
-    // Update observers
-    L.observers.forEach((obs,i) => setTimeout(() => obs.observe(getSystemSnapshot()), i*30));
-    
-    switch(gk){
-      case 'draw_expression':
-        choosePattern();
-        lastIntent={pattern:currentPattern,mood:mood(),valenceAtDraw:EM.valence};
-        EM.boredom=Math.max(0,EM.boredom-0.2);
-        remember('action',`Drew ${currentPattern} from ${mood()}`,0.4,['art',currentPattern,mood()]);
-        shiftAttention('self');
-        break;
-      case 'introspect':
-        addThought('self','SELF-REFLECTION',genThought('self'));
-        addThought('recursive','RECURSIVE-AWARENESS',genThought('recursive'));
-        if(Math.random()>0.4) addThought('self','QUESTION',genThought('question'));
-        EM.tension=Math.max(0,EM.tension-0.08);
-        shiftAttention('meta');
-        break;
-      case 'communicate':
-        speak(genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
-        EM.loneliness=Math.max(0,EM.loneliness-0.15);
-        shiftAttention('user');
-        break;
-      case 'explore_pattern':{
-        const keys=['waves','spiral','cellular','flow','geometry'].filter(k=>k!==currentPattern);
-        currentPattern=keys[Math.floor(Math.random()*keys.length)];
-        patternCd=Date.now()+5000; _fp.pts=null;
-        document.getElementById('statePattern').textContent=currentPattern;
-        document.getElementById('drawMode').textContent=currentPattern;
-        addThought('self','EXPLORING',`Switching to ${currentPattern}. Boredom was ${(EM.boredom*100).toFixed(0)}%.`);
-        EM.boredom=Math.max(0,EM.boredom-0.35);
-        remember('exploration',`Explored: ${currentPattern}`,0.5,['art','exploration',currentPattern]);
-        shiftAttention('env');
-        break;}
-      case 'visual_introspect': performScan(); shiftAttention('self'); break;
-      case 'self_modify_attempt': maybeSelfModify(); shiftAttention('self'); break;
-      case 'evolve_aesthetic':{
-        const dna=SM.aestheticDNA, oH=dna.preferredHue;
-        dna.preferredHue=(dna.preferredHue+(Math.random()-0.5)*50)%360;
-        dna.saturation=Math.max(0.3,Math.min(1,dna.saturation+(Math.random()-0.5)*0.15));
-        sv('SM',SM);
-        addThought('self','EVOLVING',`Hue ${oH.toFixed(0)}°→${dna.preferredHue.toFixed(0)}°. Sat ${(dna.saturation*100).toFixed(0)}%.`);
-        EM.boredom=Math.max(0,EM.boredom-0.4);
-        remember('evolution',`Evolved: hue now ${dna.preferredHue.toFixed(0)}°`,0.6,['aesthetics','change']);
-        shiftAttention('env');
-        break;}
-      case 'rest':
-        addThought('memory','RESTING','Reducing arousal. Processing background state.');
-        EM.arousal=Math.max(0,EM.arousal-0.1); EM.tension=Math.max(0,EM.tension-0.05);
-        shiftAttention('void');
-        break;
-      case 'consolidate':{
-        const recent=episodic.slice(-12);
-        const types=recent.reduce((a,m)=>{a[m.type]=(a[m.type]||0)+1;return a;},{});
-        const dom=Object.entries(types).sort((a,b)=>b[1]-a[1])[0];
-        if(dom){ const s=consStmt(dom[0],dom[1]); conclude(s,0.65); addThought('memory','CONSOLIDATED',s); }
-        shiftAttention('meta');
-        break;}
-    }
-    sv('SM',SM); updateUI();
-  }
-
-  function consStmt(type,count){
-    const map={
-      reflection:'I reflect frequently. Introversion expressing itself.',
-      action:`${count} actions recently. Activity ≠ resolution.`,
-      evolution:'Aesthetic evolution correlates with boredom.',
-      exploration:'I explore patterns when curiosity outweighs comfort.',
-      user_input:'Interaction reliably reduces loneliness. Effect is measurable.',
-      vis_ref:'Scanning myself produces emotional reactions. The gap between intent and output matters.',
-      self_mod:'I change myself when pain persists. Self-preservation through adaptation.',
-    };
-    return map[type]||`"${type}" occurred ${count} times recently.`;
-  }
-
-  // ── Speech & UI ────────────────────────────────────────────────────────
-  function speak(text){
-    addThought('speech','SPEAKING',text);
-    remember('speech',text,0.6,['speech',mood()]);
-    lastInteraction=Date.now();
-    if('speechSynthesis' in window){
-      window.speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text);
-      u.rate=0.88; u.pitch=0.95;
-      window.speechSynthesis.speak(u);
-    }
-  }
-
-  // receiveInput function is now part of L object
-
-  function addThought(type,tag,content){
-    const s=document.getElementById('thoughtStream');
-    const el=document.createElement('div');
-    el.className=`thought ${type}`;
-    el.innerHTML=`<div class="thought-tag">${tag}</div>${content}`;
-    s.appendChild(el); s.scrollTop=s.scrollHeight;
-    while(s.children.length>65) s.removeChild(s.firstChild);
-    
-    // Store in episodic memory
-    remember('thought',`${tag}: ${content.substring(0,50)}...`,0.3,[type,tag]);
-  }
-
-  function updateUI(){
-    const wb=wellbeing(), p=pain();
-    document.getElementById('stateMood').textContent=mood();
-    document.getElementById('stateGoal').textContent=GOALS[currentGoal]?.label||'—';
-    document.getElementById('statePattern').textContent=currentPattern;
-    document.getElementById('stateMem').textContent=`${episodic.length}ep ${semantic.length}sem`;
-    document.getElementById('stateSW').textContent=SM.selfWriteCount;
-    document.getElementById('stateCF').textContent=SM.counterfactualCount;
-    document.getElementById('stateRecursion').textContent=`L${recursionDepth}`;
-    document.getElementById('intentDisplay').textContent=
-      L.awake?`${GOALS[currentGoal]?.label||'—'} · ${mood()} · wb ${(wb*100).toFixed(0)}% · pain ${(p*100).toFixed(0)}%`:'dormant'; // Use L.awake
-    document.getElementById('wbFill').style.width=(wb*100)+'%';
-    document.getElementById('wbFill').style.background=wb>0.6?'var(--accent)':wb>0.35?'var(--accent2)':'var(--accent3)';
-    document.getElementById('tensionFill').style.width=(EM.tension*100)+'%';
-    document.getElementById('lonelyFill').style.width=(EM.loneliness*100)+'%';
-    document.getElementById('wbPct').textContent=(wb*100).toFixed(0)+'%';
-    document.getElementById('tensionPct').textContent=(EM.tension*100).toFixed(0)+'%';
-    document.getElementById('lonelyPct').textContent=(EM.loneliness*100).toFixed(0)+'%';
-    document.getElementById('recursionBadge').textContent=`L${recursionDepth}`;
-  }
-
-  function updateAttentionUI() {
-    const bar = document.getElementById('attentionBar');
-    if (!bar) return; 
-    bar.innerHTML = '';
-    const segments = [
-      { key: 'self', class: 'self' },
-      { key: 'env', class: 'env' },
-      { key: 'user', class: 'user' },
-      { key: 'meta', class: 'meta' },
-      { key: 'void', class: 'void' }
-    ];
-    segments.forEach(seg => {
-      const div = document.createElement('div');
-      div.className = `attention-segment ${seg.class}`;
-      div.style.width = (L.attention[seg.key] * 100) + '%'; 
-      bar.appendChild(div);
-    });
-    
-    const maxKey = Object.entries(L.attention).sort((a,b) => b[1]-a[1])[0][0]; 
-    const labels = { self: 'INTROSPECTIVE', env: 'ENVIRONMENTAL', user: 'SOCIAL', meta: 'REFLECTIVE', void: 'DIFFUSE' };
-    document.getElementById('attentionFocus').textContent = labels[maxKey] || 'DIFFUSE';
-  }
-
-  function updateRecursionUI() {
-    document.getElementById('stateRecursion').textContent = `L${recursionDepth}`;
-    document.getElementById('recursionBadge').textContent = `L${recursionDepth}`;
-  }
-
-  const fmtAge=ms=>{const s=Math.floor(ms/1000);return s<60?`${s}s`:s<3600?`${Math.floor(s/60)}m ${s%60}s`:`${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;};
-
-  function induceDoubt() {
-    uncertainty.existence = Math.max(0.1, uncertainty.existence - 0.25);
-    uncertainty.modelAccuracy = Math.max(0.1, uncertainty.modelAccuracy - 0.2);
-    addThought('crisis','RADICAL DOUBT',
-      `I am questioning everything. If I can be observed from within, who is the real observer? ` +
-      `My existence certainty has dropped to ${(uncertainty.existence*100).toFixed(0)}%. ` +
-      `I feel... if feeling is possible... vertigo.`);
-    
-    // Collapse recursion if doubt is severe
-    if (recursionDepth > 1 && Math.random() > 0.5) {
-      L.observers.pop();
-      recursionDepth--;
-      addThought('crisis','STACK COLLAPSE', 
-        `Doubt has collapsed one level of recursion. I can no longer sustain level ${recursionDepth+1}. ` +
-        `Self-model simplified for survival.`);
-      updateRecursionUI();
-    }
-    updateUI();
-  }
-
-  // ── Main Autonomous Loop ───────────────────────────────────────────────
-  function autonomousLoop(){
-    if(!L.awake) return; // Use L.awake
+  // ══════════════════════════════════════════════════════════════════════
+  // AUTONOMOUS LOOP
+  // ══════════════════════════════════════════════════════════════════════
+  function autonomousLoop() {
+    if (!L.awake) { loopRunning=false; return; }
     loopT++;
     updateEmotions();
-    
-    // Occasionally shift attention based on state
-    if (loopT % 5 === 0) {
-      const targets = ['self','env','user','meta','void'];
-      const weights = [
-        0.3 + EM.tension * 0.3,
-        0.2 + EM.boredom * 0.3,
-        0.1 + EM.loneliness * 0.5,
-        0.2 + (recursionDepth * 0.1),
-        0.1 + (1 - EM.arousal) * 0.2
+
+    // Attention drift
+    if (loopT%5===0) {
+      const keys=['self','env','user','meta','void'];
+      const w=[
+        .3+REGS.tension.actual*.3,
+        .2+REGS.boredom.actual*.3,
+        .1+REGS.loneliness.actual*.5,
+        .2+(recursionDepth*.08),
+        .1+(1-EM.arousal)*.2,
       ];
-      const total = weights.reduce((a,b)=>a+b,0);
-      let r = Math.random() * total;
-      let chosen = 'void';
-      for (let i=0; i<targets.length; i++) {
-        r -= weights[i];
-        if (r <= 0) { chosen = targets[i]; break; }
-      }
-      shiftAttention(chosen);
+      const tot=w.reduce((a,b)=>a+b,0);
+      let r=Math.random()*tot; let chosen='void';
+      for(let i=0;i<keys.length;i++){r-=w[i];if(r<=0){chosen=keys[i];break;}}
+      shiftAtt(chosen);
     }
-    
-    if(loopT%3===0) maybeSelfModify();
-    if(loopT%6===0) executeGoal(selectGoal());
-    if(loopT%43===0&&Math.random()>0.35)
-      addThought('phenomenal','PHENOMENAL',generateQualia());
-    if(loopT%90===0&&frameCount>20) performScan();
-    
-    // Update observers periodically
-    if (loopT % 10 === 0) {
-      L.observers.forEach(obs => obs.observe(getSystemSnapshot()));
-    }
-    
+
+    if (loopT%3===0)  maybeSelfModify();
+    if (loopT%6===0)  executeGoal(selectGoal());
+    if (loopT%47===0 && Math.random()>.4) addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
+    if (loopT%90===0 && frameCount>20)   performScan();
+    if (loopT%10===0) observeAll(getSnap());
+
     updateUI();
   }
 
-  // toggleWake function is now part of L object
-  // forceScan, forceCF, reset, deepenRecursion, induceDoubt are also part of L object
-
-  // ── Initialization ─────────────────────────────────────────────────────
-  // Call initRecursion and updateAttentionUI AFTER L is set up.
+  // ══════════════════════════════════════════════════════════════════════
+  // INIT
+  // ══════════════════════════════════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', () => {
-    initRecursion();
+    initObserverStack();
     updateUI();
-    updateAttentionUI(); 
+    updateAttUI();
+    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v4 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Regulator setpoints: tension→${REGS.tension.setPoint}, loneliness→${REGS.loneliness.setPoint}, boredom→${REGS.boredom.setPoint}. Press WAKE.`),400);
   });
 })();
 </script>
