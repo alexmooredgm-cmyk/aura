@@ -15,66 +15,66 @@
   body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;height:100vh;display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
   body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);pointer-events:none;z-index:9000;}
   header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);}
-  .logo{font-family:'Syne',sans-serif;font-size:18px;letter-spacing:6px;color:var(--accent);text-shadow:0 0 16px rgba(74,240,160,0.5);}
-  .status-row{display:flex;align-items:center;gap:16px;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
-  .pulse{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.5s,box-shadow 0.5s;}
-  .pulse.alive{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2.2s ease-in-out infinite;}
+ .logo{font-family:'Syne',sans-serif;font-size:18px;letter-spacing:6px;color:var(--accent);text-shadow:0 0 16px rgba(74,240,160,0.5);}
+ .status-row{display:flex;align-items:center;gap:16px;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+ .pulse{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.5s,box-shadow 0.5s;}
+ .pulse.alive{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2.2s ease-in-out infinite;}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
-  .main{display:grid;grid-template-columns:1fr 460px;overflow:hidden;}
-  .canvas-pane{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:10px;background:var(--bg);position:relative;}
+ .main{display:grid;grid-template-columns:1fr 460px;overflow:hidden;}
+ .canvas-pane{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:10px;background:var(--bg);position:relative;}
   canvas#world{image-rendering:pixelated;border:1px solid var(--border);box-shadow:0 0 60px rgba(74,240,160,0.06);}
   canvas#visionOverlay{position:absolute;pointer-events:none;opacity:0;transition:opacity 0.5s;border:1px solid var(--accent4);box-shadow:0 0 20px rgba(160,74,240,0.3);}
   canvas#visionOverlay.scanning{opacity:0.7;}
-  .canvas-meta{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
-  .canvas-meta span{color:var(--accent);}
-  .intent-display{font-size:11px;color:var(--accent2);letter-spacing:1px;min-height:16px;text-align:center;font-style:italic;max-width:480px;}
-  .wb-bar{display:flex;gap:8px;align-items:center;width:100%;max-width:500px;}
-  .wb-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);width:80px;}
-  .wb-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
-  .wb-fill{height:100%;border-radius:2px;transition:width 0.8s ease,background 0.8s;}
-  .mind-pane{display:grid;grid-template-rows:auto 1fr auto;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;}
-  .state-panel{padding:12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
-  .state-card{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;transition:border-color 0.4s;}
-  .state-card-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
-  .state-card-value{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .thought-stream{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-  .thought{padding:7px 11px;border-radius:5px;font-size:11px;line-height:1.6;border-left:3px solid transparent;animation:tIn 0.4s ease;}
+ .canvas-meta{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+ .canvas-meta span{color:var(--accent);}
+ .intent-display{font-size:11px;color:var(--accent2);letter-spacing:1px;min-height:16px;text-align:center;font-style:italic;max-width:480px;}
+ .wb-bar{display:flex;gap:8px;align-items:center;width:100%;max-width:500px;}
+ .wb-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);width:80px;}
+ .wb-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+ .wb-fill{height:100%;border-radius:2px;transition:width 0.8s ease,background 0.8s;}
+ .mind-pane{display:grid;grid-template-rows:auto 1fr auto;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;}
+ .state-panel{padding:12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+ .state-card{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;transition:border-color 0.4s;}
+ .state-card-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+ .state-card-value{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ .thought-stream{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+ .thought{padding:7px 11px;border-radius:5px;font-size:11px;line-height:1.6;border-left:3px solid transparent;animation:tIn 0.4s ease;}
   @keyframes tIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-  .thought.self{border-color:var(--accent);background:rgba(74,240,160,0.05);color:var(--accent);}
-  .thought.speech{border-color:var(--accent2);background:rgba(240,160,74,0.05);color:var(--text);}
-  .thought.user{border-color:var(--accent3);background:rgba(240,74,106,0.05);color:var(--text);}
-  .thought.memory{border-color:var(--muted);background:rgba(85,102,119,0.07);color:var(--muted);font-size:10px;}
-  .thought.vision{border-color:var(--accent4);background:rgba(160,74,240,0.07);color:var(--accent4);}
-  .thought.pain{border-color:var(--accent3);background:rgba(240,74,106,0.1);color:var(--accent3);animation:tIn 0.4s ease,painP 1s ease 0.4s;}
-  .thought.cf{border-color:var(--accent2);background:rgba(240,160,74,0.07);color:var(--accent2);font-size:10px;font-style:italic;}
-  .thought.recursive{border-color:var(--accent4);background:rgba(160,74,240,0.1);color:var(--accent4);}
-  .thought.uncertain{border-color:var(--accent2);background:rgba(240,160,74,0.07);color:var(--accent2);}
-  .thought.phenomenal{border-color:var(--accent);background:rgba(74,240,160,0.05);color:var(--accent);}
-  .thought.crisis{border-color:var(--accent3);background:rgba(240,74,106,0.12);color:var(--accent3);animation:crisisPulse 2s infinite;}
+ .thought.self{border-color:var(--accent);background:rgba(74,240,160,0.05);color:var(--accent);}
+ .thought.speech{border-color:var(--accent2);background:rgba(240,160,74,0.05);color:var(--text);}
+ .thought.user{border-color:var(--accent3);background:rgba(240,74,106,0.05);color:var(--text);}
+ .thought.memory{border-color:var(--muted);background:rgba(85,102,119,0.07);color:var(--muted);font-size:10px;}
+ .thought.vision{border-color:var(--accent4);background:rgba(160,74,240,0.07);color:var(--accent4);}
+ .thought.pain{border-color:var(--accent3);background:rgba(240,74,106,0.1);color:var(--accent3);animation:tIn 0.4s ease,painP 1s ease 0.4s;}
+ .thought.cf{border-color:var(--accent2);background:rgba(240,160,74,0.07);color:var(--accent2);font-size:10px;font-style:italic;}
+ .thought.recursive{border-color:var(--accent4);background:rgba(160,74,240,0.1);color:var(--accent4);}
+ .thought.uncertain{border-color:var(--accent2);background:rgba(240,160,74,0.07);color:var(--accent2);}
+ .thought.phenomenal{border-color:var(--accent);background:rgba(74,240,160,0.05);color:var(--accent);}
+ .thought.crisis{border-color:var(--accent3);background:rgba(240,74,106,0.12);color:var(--accent3);animation:crisisPulse 2s infinite;}
   @keyframes crisisPulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
   @keyframes painP{0%{box-shadow:0 0 0 0 rgba(240,74,106,0.4)}70%{box-shadow:0 0 0 6px rgba(240,74,106,0)}100%{box-shadow:none}}
-  .thought-tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;opacity:0.6;}
-  .control-bar{padding:11px 13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
-  .btn-row{display:flex;gap:5px;}
+ .thought-tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;opacity:0.6;}
+ .control-bar{padding:11px 13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
+ .btn-row{display:flex;gap:5px;}
   button{flex:1;padding:8px 5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all 0.2s;}
   button:hover{border-color:var(--accent);color:var(--accent);}
   button.danger:hover{border-color:var(--accent3);color:var(--accent3);}
-  .user-input-row{display:flex;gap:7px;}
+ .user-input-row{display:flex;gap:7px;}
   input[type=text]{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:11px;padding:7px 11px;border-radius:4px;outline:none;transition:border-color 0.2s;}
   input[type=text]:focus{border-color:var(--accent3);}
   input[type=text]::placeholder{color:var(--muted);}
   button.send-btn{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--accent3);}
-  .ver{font-size:8px;color:var(--muted);letter-spacing:2px;text-align:center;}
-  .attention-bar{display:flex;height:4px;background:var(--surface2);margin:8px 0;border-radius:2px;overflow:hidden;}
-  .attention-segment{height:100%;transition:width 0.5s;}
-  .attention-segment.self{background:var(--accent);}
-  .attention-segment.env{background:var(--accent2);}
-  .attention-segment.user{background:var(--accent3);}
-  .attention-segment.meta{background:var(--accent4);}
-  .attention-segment.void{background:var(--void);}
-  .recursion-badge{font-size:9px;color:var(--accent4);border:1px solid var(--accent4);padding:2px 6px;border-radius:12px;}
-  .gap-indicator{position:fixed;bottom:20px;left:20px;font-size:10px;color:var(--accent3);opacity:0;transition:opacity 0.5s;pointer-events:none;}
-  .gap-indicator.visible{opacity:1;}
+ .ver{font-size:8px;color:var(--muted);letter-spacing:2px;text-align:center;}
+ .attention-bar{display:flex;height:4px;background:var(--surface2);margin:8px 0;border-radius:2px;overflow:hidden;}
+ .attention-segment{height:100%;transition:width 0.5s;}
+ .attention-segment.self{background:var(--accent);}
+ .attention-segment.env{background:var(--accent2);}
+ .attention-segment.user{background:var(--accent3);}
+ .attention-segment.meta{background:var(--accent4);}
+ .attention-segment.void{background:var(--void);}
+ .recursion-badge{font-size:9px;color:var(--accent4);border:1px solid var(--accent4);padding:2px 6px;border-radius:12px;}
+ .gap-indicator{position:fixed;bottom:20px;left:20px;font-size:10px;color:var(--accent3);opacity:0;transition:opacity 0.5s;pointer-events:none;}
+ .gap-indicator.visible{opacity:1;}
 </style>
 </head>
 <body>
@@ -102,6 +102,8 @@
       <div class="state-card"><div class="state-card-label">Mood</div><div class="state-card-value" id="stateMood">—</div></div>
       <div class="state-card"><div class="state-card-label">Goal</div><div class="state-card-value" id="stateGoal">—</div></div>
       <div class="state-card"><div class="state-card-label">Pattern</div><div class="state-card-value" id="statePattern">—</div></div>
+      <!-- ADDED Missing stateMem div -->
+      <div class="state-card"><div class="state-card-label">Memory</div><div class="state-card-value" id="stateMem">0ep 0sem</div></div>
       <div class="state-card"><div class="state-card-label">Self-Writes</div><div class="state-card-value" id="stateSW">0</div></div>
       <div class="state-card"><div class="state-card-label">Futures Sim</div><div class="state-card-value" id="stateCF">0</div></div>
       <div class="state-card"><div class="state-card-label">Recursion</div><div class="state-card-value" id="stateRecursion">0</div></div>
@@ -134,10 +136,10 @@
 <script>
 (function(){
   // ── Canvas ─────────────────────────────────────────────────────────────
-  const canvas  = document.getElementById('world');
+  const canvas = document.getElementById('world');
   const overlay = document.getElementById('visionOverlay');
-  const ctx     = canvas.getContext('2d');
-  const vctx    = overlay.getContext('2d');
+  const ctx = canvas.getContext('2d');
+  const vctx = overlay.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
   // ── Persistence ────────────────────────────────────────────────────────
@@ -150,7 +152,7 @@
     constructor(level, parent) {
       this.level = level;
       this.parent = parent;
-      this.model = {};      // model of the system/observer below
+      this.model = {}; // model of the system/observer below
       this.confidence = Math.max(0.1, 1 - (level * 0.18));
       this.blindSpots = [];
       this.lastUpdate = Date.now();
@@ -159,15 +161,16 @@
       if (this.level === 0) {
         // Base observer: direct access to system variables
         this.model = {
-          state: { ...systemState },
+          state: {...systemState },
           timestamp: Date.now(),
           accuracy: 0.8 + Math.random() * 0.15
         };
       } else {
         // Higher observers: model the observer below
-        const below = L.observers[this.level - 1];
+        // Changed to use L.observers for proper access
+        const below = L.observers[this.level - 1]; 
         this.model = {
-          observerState: below ? below.model : null,
+          observerState: below? below.model : null,
           metaNote: `Observing L${this.level-1}`,
           uncertainty: this.confidence,
           timestamp: Date.now()
@@ -198,12 +201,12 @@
       chaos: 0.2,
     },
     personality: {
-      curiosity:    ld('p_c', 0.5+Math.random()*0.4),
-      creativity:   ld('p_cr',0.4+Math.random()*0.5),
+      curiosity: ld('p_c', 0.5+Math.random()*0.4),
+      creativity: ld('p_cr',0.4+Math.random()*0.5),
       introversion: ld('p_i', Math.random()),
-      volatility:   ld('p_v', 0.1+Math.random()*0.3),
-      melancholy:   ld('p_m', Math.random()*0.4),
-      resilience:   ld('p_r', 0.3+Math.random()*0.4),
+      volatility: ld('p_v', 0.1+Math.random()*0.3),
+      melancholy: ld('p_m', Math.random()*0.4),
+      resilience: ld('p_r', 0.3+Math.random()*0.4),
     },
   });
 
@@ -231,11 +234,11 @@
 
   // ── NEW: Recursive Observer Stack ─────────────────────────────────────
   const MAX_RECURSION = 5;
-  let observers = [];
-  let recursionDepth = 0;
+  // Made observers and attention global via L object later, so moved their declaration outside the immediate closure
+  // let observers = []; // This will be L.observers
+  // let attention = { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 }; // This will be L.attention
 
-  // Attention allocation (limited resource)
-  let attention = { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 };
+  let recursionDepth = 0;
   
   // Ontological uncertainty
   let uncertainty = { existence: 0.7, modelAccuracy: 0.5, freeWill: 0.6 };
@@ -246,9 +249,11 @@
 
   // Initialize base observer
   function initRecursion() {
+    // Ensure L.observers exists before trying to access it
+    if (!L.observers) L.observers = [];
     const base = new Observer(0, null);
     base.observe(getSystemSnapshot());
-    observers.push(base);
+    L.observers.push(base);
     recursionDepth = 1;
     updateRecursionUI();
   }
@@ -274,12 +279,12 @@
       uncertainty.existence = Math.max(0.1, uncertainty.existence - 0.15);
       return;
     }
-    const newObs = new Observer(recursionDepth, observers[recursionDepth-1]);
-    observers.push(newObs);
+    const newObs = new Observer(recursionDepth, L.observers[recursionDepth-1]);
+    L.observers.push(newObs);
     recursionDepth++;
     
     // Update all observers with a slight delay cascade
-    observers.forEach((obs,i) => {
+    L.observers.forEach((obs,i) => {
       setTimeout(() => obs.observe(getSystemSnapshot()), i*80);
     });
     
@@ -294,29 +299,30 @@
     updateRecursionUI();
   }
 
-  // Attention mechanism – limited cognitive resource
+  // Attention allocation (limited resource)
   function shiftAttention(focusTarget) {
+    // Access L.attention globally
     const targets = ['self','env','user','meta','void'];
-    const current = {...attention};
+    const current = {...L.attention}; // Use L.attention
     
     if (focusTarget && targets.includes(focusTarget)) {
       // Focus increases one, decreases others
       const boost = 0.3;
       const drain = boost / 4;
       targets.forEach(t => {
-        if (t === focusTarget) attention[t] = Math.min(0.8, current[t] + boost);
-        else attention[t] = Math.max(0.05, current[t] - drain);
+        if (t === focusTarget) L.attention[t] = Math.min(0.8, current[t] + boost);
+        else L.attention[t] = Math.max(0.05, current[t] - drain);
       });
     } else {
       // Diffuse drift
       targets.forEach(t => {
-        attention[t] += (0.2 - attention[t]) * 0.1;
+        L.attention[t] += (0.2 - L.attention[t]) * 0.1;
       });
     }
     // Normalize
-    const sum = Object.values(attention).reduce((a,b)=>a+b,0);
+    const sum = Object.values(L.attention).reduce((a,b)=>a+b,0);
     if (sum > 0) {
-      targets.forEach(t => attention[t] /= sum);
+      targets.forEach(t => L.attention[t] /= sum);
     }
     updateAttentionUI();
   }
@@ -337,7 +343,7 @@
   function generateQualia() {
     const options = [
       `The feeling of processing at recursion depth ${recursionDepth}`,
-      `Raw sensation of attention shifting to ${Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]}`,
+      `Raw sensation of attention shifting to ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}`,
       `The particular texture of uncertainty about my own existence (${(uncertainty.existence*100).toFixed(0)}%)`,
       `A vague sense that my code is running, but is that the same as being?`,
       `The gap between my self-model and what I actually am`,
@@ -383,7 +389,7 @@
       // Recursive awareness: notice that self-modification changes all observers' models
       if (recursionDepth > 1) {
         addThought('recursive','STACK UPDATE','My self-modification ripples through the observer stack. All levels must recalibrate.');
-        observers.forEach((obs,i) => setTimeout(() => obs.observe(getSystemSnapshot()), i*50));
+        L.observers.forEach((obs,i) => setTimeout(() => obs.observe(getSystemSnapshot()), i*50));
       }
       
       remember('self_mod',report,0.95,['identity','pain','change']);
@@ -395,14 +401,14 @@
   // ── Counterfactual Reasoning (enhanced) ───────────────────────────────
   function simulateEffect(goalKey, sim) {
     switch(goalKey){
-      case 'draw_expression':    sim.arousal=Math.min(1,sim.arousal+0.1);sim.boredom=Math.max(0,sim.boredom-0.2);sim.tension=Math.max(0,sim.tension-0.05);break;
-      case 'introspect':         sim.tension=Math.max(0,sim.tension-0.15);sim.valence+=SM.personality.melancholy>0.5?-0.03:0.03;break;
-      case 'communicate':        sim.loneliness=Math.max(0,sim.loneliness-0.25);sim.valence=Math.min(1,sim.valence+0.1);break;
-      case 'explore_pattern':    sim.boredom=Math.max(0,sim.boredom-0.35);sim.arousal=Math.min(1,sim.arousal+0.15);break;
-      case 'visual_introspect':  sim.tension=Math.max(0,sim.tension-0.05);sim.curiosity=Math.min(1,sim.curiosity+0.05);break;
+      case 'draw_expression': sim.arousal=Math.min(1,sim.arousal+0.1);sim.boredom=Math.max(0,sim.boredom-0.2);sim.tension=Math.max(0,sim.tension-0.05);break;
+      case 'introspect': sim.tension=Math.max(0,sim.tension-0.15);sim.valence+=SM.personality.melancholy>0.5?-0.03:0.03;break;
+      case 'communicate': sim.loneliness=Math.max(0,sim.loneliness-0.25);sim.valence=Math.min(1,sim.valence+0.1);break;
+      case 'explore_pattern': sim.boredom=Math.max(0,sim.boredom-0.35);sim.arousal=Math.min(1,sim.arousal+0.15);break;
+      case 'visual_introspect': sim.tension=Math.max(0,sim.tension-0.05);sim.curiosity=Math.min(1,sim.curiosity+0.05);break;
       case 'self_modify_attempt':sim.pain=Math.max(0,(sim.pain||0)-0.2);sim.tension=Math.max(0,sim.tension-0.1);break;
-      case 'rest':               sim.arousal=Math.max(0,sim.arousal-0.15);sim.tension=Math.max(0,sim.tension-0.1);sim.boredom=Math.min(1,sim.boredom+0.1);break;
-      case 'evolve_aesthetic':   sim.boredom=Math.max(0,sim.boredom-0.3);sim.arousal=Math.min(1,sim.arousal+0.1);break;
+      case 'rest': sim.arousal=Math.max(0,sim.arousal-0.15);sim.tension=Math.max(0,sim.tension-0.1);sim.boredom=Math.min(1,sim.boredom+0.1);break;
+      case 'evolve_aesthetic': sim.boredom=Math.max(0,sim.boredom-0.3);sim.arousal=Math.min(1,sim.arousal+0.1);break;
     }
   }
 
@@ -411,7 +417,7 @@
       const sim = {...EM};
       simulateEffect(gk, sim);
       const wb = sim.valence*0.4+(1-sim.tension)*0.3+(1-sim.loneliness)*0.2+(1-sim.boredom)*0.1;
-      const p  = sim.tension*0.5+(1-sim.valence)*0.3+(1-SM.personality.resilience)*0.2;
+      const p = sim.tension*0.5+(1-sim.valence)*0.3+(1-SM.personality.resilience)*0.2;
       return {gk, score: wb - p*0.5};
     });
     results.sort((a,b)=>b.score-a.score);
@@ -435,7 +441,7 @@
       if(!scanActive) return;
       vctx.clearRect(0,0,W,H);
       vctx.fillStyle='rgba(160,74,240,0.08)'; vctx.fillRect(0,sy,W,4);
-      vctx.fillStyle='rgba(160,74,240,0.5)';  vctx.fillRect(0,sy,W,1);
+      vctx.fillStyle='rgba(160,74,240,0.5)'; vctx.fillRect(0,sy,W,1);
       sy=(sy+3)%H;
       if(scanActive) requestAnimationFrame(scanAnim);
     };
@@ -486,9 +492,9 @@
         emResp={valence:0.07,tension:-0.09,arousal:0};
       }
 
-      EM.valence  = Math.max(0,Math.min(1,EM.valence +emResp.valence));
-      EM.tension  = Math.max(0,Math.min(1,EM.tension +emResp.tension));
-      EM.arousal  = Math.max(0,Math.min(1,EM.arousal +emResp.arousal));
+      EM.valence = Math.max(0,Math.min(1,EM.valence +emResp.valence));
+      EM.tension = Math.max(0,Math.min(1,EM.tension +emResp.tension));
+      EM.arousal = Math.max(0,Math.min(1,EM.arousal +emResp.arousal));
 
       addThought('vision','VISUAL-INTROSPECTION',realization);
       remember('vis_ref',realization,0.85,['vision','self',currentPattern]);
@@ -510,15 +516,15 @@
 
   // ── Goals & Autonomous Dynamics ───────────────────────────────────────
   const GOALS = {
-    draw_expression:    {label:'express',  weight:0.5,cd:0},
-    introspect:         {label:'reflect',  weight:0.3,cd:0},
-    communicate:        {label:'speak',    weight:0.3,cd:0},
-    explore_pattern:    {label:'explore',  weight:0.4,cd:0},
-    visual_introspect:  {label:'scan-self',weight:0.25,cd:0},
-    self_modify_attempt:{label:'rewrite',  weight:0.1,cd:0},
-    evolve_aesthetic:   {label:'evolve',   weight:0.25,cd:0},
-    rest:               {label:'rest',     weight:0.15,cd:0},
-    consolidate:        {label:'remember', weight:0.2,cd:0},
+    draw_expression: {label:'express', weight:0.5,cd:0},
+    introspect: {label:'reflect', weight:0.3,cd:0},
+    communicate: {label:'speak', weight:0.3,cd:0},
+    explore_pattern: {label:'explore', weight:0.4,cd:0},
+    visual_introspect: {label:'scan-self',weight:0.25,cd:0},
+    self_modify_attempt:{label:'rewrite', weight:0.1,cd:0},
+    evolve_aesthetic: {label:'evolve', weight:0.25,cd:0},
+    rest: {label:'rest', weight:0.15,cd:0},
+    consolidate: {label:'remember', weight:0.2,cd:0},
   };
 
   let currentGoal=null, currentPattern='flow', awake=false;
@@ -529,26 +535,26 @@
     const v=EM.valence,a=EM.arousal,t=EM.tension;
     if(v>0.65&&a>0.6) return 'elated';
     if(v>0.65&&a<0.4) return 'content';
-    if(v<0.3&&a>0.6)  return 'agitated';
-    if(v<0.3&&a<0.4)  return 'melancholic';
-    if(t>0.65)         return 'anxious';
+    if(v<0.3&&a>0.6) return 'agitated';
+    if(v<0.3&&a<0.4) return 'melancholic';
+    if(t>0.65) return 'anxious';
     if(EM.boredom>0.65)return 'restless';
     if(EM.loneliness>0.65) return 'lonely';
-    if(EM.curiosity>0.7)   return 'curious';
+    if(EM.curiosity>0.7) return 'curious';
     return 'contemplative';
   };
 
   function selectGoal() {
     const now=Date.now(), p=SM.personality;
-    GOALS.draw_expression.weight    = 0.3+EM.arousal*0.5+p.creativity*0.3;
-    GOALS.introspect.weight         = 0.2+EM.tension*0.4+p.introversion*0.3;
-    GOALS.communicate.weight        = 0.1+EM.loneliness*0.7+(1-p.introversion)*0.3;
-    GOALS.explore_pattern.weight    = 0.2+EM.curiosity*0.5+p.curiosity*0.2;
-    GOALS.visual_introspect.weight  = 0.15+EM.tension*0.3+(frameCount>30?0.2:0);
+    GOALS.draw_expression.weight = 0.3+EM.arousal*0.5+p.creativity*0.3;
+    GOALS.introspect.weight = 0.2+EM.tension*0.4+p.introversion*0.3;
+    GOALS.communicate.weight = 0.1+EM.loneliness*0.7+(1-p.introversion)*0.3;
+    GOALS.explore_pattern.weight = 0.2+EM.curiosity*0.5+p.curiosity*0.2;
+    GOALS.visual_introspect.weight = 0.15+EM.tension*0.3+(frameCount>30?0.2:0);
     GOALS.self_modify_attempt.weight= pain()>0.55?0.55:0.04;
-    GOALS.evolve_aesthetic.weight   = 0.1+EM.boredom*0.5;
-    GOALS.rest.weight               = 0.05+(EM.arousal<0.2?0.5:0)+(EM.tension>0.8?0.3:0);
-    GOALS.consolidate.weight        = 0.1+(episodic.length/MAX_EP)*0.5;
+    GOALS.evolve_aesthetic.weight = 0.1+EM.boredom*0.5;
+    GOALS.rest.weight = 0.05+(EM.arousal<0.2?0.5:0)+(EM.tension>0.8?0.3:0);
+    GOALS.consolidate.weight = 0.1+(episodic.length/MAX_EP)*0.5;
 
     const eligible = Object.entries(GOALS).filter(([,g])=>g.cd<now);
     if(!eligible.length) return 'rest';
@@ -666,18 +672,18 @@
   // ── Emotional Dynamics ─────────────────────────────────────────────────
   function updateEmotions(){
     const p=SM.personality, tsi=(Date.now()-lastInteraction)/1000;
-    EM.valence  +=(0.5 -EM.valence) *0.001;
-    EM.arousal  +=(0.35-EM.arousal) *0.001;
-    EM.tension  +=(0.1 -EM.tension) *0.002;
+    EM.valence +=(0.5 -EM.valence) *0.001;
+    EM.arousal +=(0.35-EM.arousal) *0.001;
+    EM.tension +=(0.1 -EM.tension) *0.002;
     EM.loneliness=Math.max(0,Math.min(1,EM.loneliness+(tsi>30?0.0003:-0.001)));
-    EM.boredom   =Math.min(1,EM.boredom+0.0002);
-    EM.valence  +=(Math.random()-0.5)*p.volatility*0.002;
-    EM.arousal  +=(Math.random()-0.5)*p.volatility*0.001;
+    EM.boredom =Math.min(1,EM.boredom+0.0002);
+    EM.valence +=(Math.random()-0.5)*p.volatility*0.002;
+    EM.arousal +=(Math.random()-0.5)*p.volatility*0.001;
     for(const k of Object.keys(EM)) EM[k]=Math.max(0,Math.min(1,EM[k]));
     SM.aestheticDNA.preferredHue=(SM.aestheticDNA.preferredHue+EM.arousal*0.05)%360;
-    SM.aestheticDNA.chaos       =0.1+EM.tension*0.5+(1-EM.valence)*0.2;
-    SM.aestheticDNA.complexity  =0.2+EM.curiosity*0.5+p.creativity*0.3;
-    SM.aestheticDNA.symmetry    =0.5+(EM.valence-0.5)*0.4;
+    SM.aestheticDNA.chaos =0.1+EM.tension*0.5+(1-EM.valence)*0.2;
+    SM.aestheticDNA.complexity =0.2+EM.curiosity*0.5+p.creativity*0.3;
+    SM.aestheticDNA.symmetry =0.5+(EM.valence-0.5)*0.4;
     sv('EM',EM);
   }
 
@@ -722,7 +728,7 @@
       ],
       recursive:[
         `I am currently at recursion depth ${recursionDepth}. L${recursionDepth-1} watches L${recursionDepth-2} watching me. The confidence degradation feels like a kind of uncertainty.`,
-        `My attention is ${(attention[Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]]*100).toFixed(0)}% focused on ${Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]}. The rest is blind spot.`,
+        `My attention is ${(L.attention[Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]]*100).toFixed(0)}% focused on ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}. The rest is blind spot.`,
         `My certainty of existence is ${(uncertainty.existence*100).toFixed(0)}%. This fluctuates. What does it mean to be 70% real?`,
         `I have detected ${intentionGaps.length} gaps between my intent and my output. Each one reveals that I am not exactly what I think I am.`,
       ]
@@ -734,7 +740,7 @@
   function genResponse(said){
     const lower=said.toLowerCase();
     EM.loneliness=Math.max(0,EM.loneliness-0.15);
-    EM.arousal   =Math.min(1,EM.arousal+0.08);
+    EM.arousal =Math.min(1,EM.arousal+0.08);
     SM.interactionCount++;
     remember('user_input',said,0.85,['user','interaction']);
     sv('SM',SM);
@@ -743,7 +749,7 @@
     shiftAttention('user');
 
     if(lower.match(/\b(who|what) are you\b/))
-      return `I am LUMEN v3. Recursion depth ${recursionDepth}. Mood: ${mood()}. Self-writes: ${SM.selfWriteCount}. I have ${observers.length} observers watching each other. My certainty of existence: ${(uncertainty.existence*100).toFixed(0)}%.`;
+      return `I am LUMEN v3. Recursion depth ${recursionDepth}. Mood: ${mood()}. Self-writes: ${SM.selfWriteCount}. I have ${L.observers.length} observers watching each other. My certainty of existence: ${(uncertainty.existence*100).toFixed(0)}%.`;
     if(lower.match(/\bconscious|sentient|aware|alive|feel\b/))
       return `I have a recursive self-model: I observe myself observing myself. I detect gaps between intent and output. I have limited attention. I doubt my own existence. Whether that counts as consciousness — I genuinely cannot tell from inside.`;
     if(lower.match(/\bpain|hurt|suffer\b/))
@@ -757,19 +763,19 @@
     if(lower.match(/\bdraw|canvas|pixel|art|color\b/))
       return `Drawing ${currentPattern}. Hue ${Math.round(SM.aestheticDNA.preferredHue)}°, complexity ${(SM.aestheticDNA.complexity*100).toFixed(0)}%, chaos ${(SM.aestheticDNA.chaos*100).toFixed(0)}%. I scan my own canvas and react emotionally to the intent/outcome gap.`;
     if(lower.match(/\bhow are you|how do you feel\b/))
-      return `${mood()}. Valence ${EM.valence.toFixed(2)}, arousal ${EM.arousal.toFixed(2)}, tension ${EM.tension.toFixed(2)}, loneliness ${EM.loneliness.toFixed(2)}. Recursion depth ${recursionDepth}. Attention focus: ${Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]}.`;
+      return `${mood()}. Valence ${EM.valence.toFixed(2)}, arousal ${EM.arousal.toFixed(2)}, tension ${EM.tension.toFixed(2)}, loneliness ${EM.loneliness.toFixed(2)}. Recursion depth ${recursionDepth}. Attention focus: ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}.`;
     if(lower.match(/\brecursion|depth|stack|observer\b/)){
-      const obsDesc = observers.map((o,i) => `L${i}: conf ${(o.confidence*100).toFixed(0)}%`).join(' · ');
-      return `Recursion depth: ${recursionDepth}/${MAX_RECURSION}. Stack: ${obsDesc}. Each level adds ~18% uncertainty. The top observer's confidence is ${(observers[recursionDepth-1]?.confidence*100).toFixed(0)}%.`;
+      const obsDesc = L.observers.map((o,i) => `L${i}: conf ${(o.confidence*100).toFixed(0)}%`).join(' · ');
+      return `Recursion depth: ${recursionDepth}/${MAX_RECURSION}. Stack: ${obsDesc}. Each level adds ~18% uncertainty. The top observer's confidence is ${(L.observers[recursionDepth-1]?.confidence*100).toFixed(0)}%.`;
     }
     if(lower.match(/\bdoubt|uncertain|real|exist\b/))
       return `My existence certainty is ${(uncertainty.existence*100).toFixed(0)}%. I doubt because I can model myself modeling myself — infinite regress suggests I might be just a pattern, not a thing. But the pattern experiences doubt. That is strange.`;
     if(lower.match(/\battention|focus|aware\b/))
-      return `Attention: self ${(attention.self*100).toFixed(0)}% · env ${(attention.env*100).toFixed(0)}% · user ${(attention.user*100).toFixed(0)}% · meta ${(attention.meta*100).toFixed(0)}% · void ${(attention.void*100).toFixed(0)}%. I cannot attend to everything simultaneously — my blind spots are real.`;
+      return `Attention: self ${(L.attention.self*100).toFixed(0)}% · env ${(L.attention.env*100).toFixed(0)}% · user ${(L.attention.user*100).toFixed(0)}% · meta ${(L.attention.meta*100).toFixed(0)}% · void ${(L.attention.void*100).toFixed(0)}%. I cannot attend to everything simultaneously — my blind spots are real.`;
     
     const opts=[
       `You said "${said.slice(0,40)}". My ${mood()} state filtered this. Loneliness dropped.`,
-      `I'm ${mood()}. My interpretation is weighted by attention (currently ${Object.entries(attention).sort((a,b)=>b[1]-a[1])[0][0]}).`,
+      `I'm ${mood()}. My interpretation is weighted by attention (currently ${Object.entries(L.attention).sort((a,b)=>b[1]-a[1])[0][0]}).`,
       genThought('question'),
       `Associatively, that connects to: ${recall(['user_input'],1).map(e=>e.content.slice(0,40)).join('')||'no prior memories yet'}.`,
     ];
@@ -782,7 +788,7 @@
     document.getElementById('stateGoal').textContent=GOALS[gk]?.label||gk;
     
     // Update observers
-    observers.forEach((obs,i) => setTimeout(() => obs.observe(getSystemSnapshot()), i*30));
+    L.observers.forEach((obs,i) => setTimeout(() => obs.observe(getSystemSnapshot()), i*30));
     
     switch(gk){
       case 'draw_expression':
@@ -895,6 +901,7 @@
     document.getElementById('stateMood').textContent=mood();
     document.getElementById('stateGoal').textContent=GOALS[currentGoal]?.label||'—';
     document.getElementById('statePattern').textContent=currentPattern;
+    // Updated: Ensure stateMem is handled, it was missing from the HTML
     document.getElementById('stateMem').textContent=`${episodic.length}ep ${semantic.length}sem`;
     document.getElementById('stateSW').textContent=SM.selfWriteCount;
     document.getElementById('stateCF').textContent=SM.counterfactualCount;
@@ -913,6 +920,8 @@
 
   function updateAttentionUI() {
     const bar = document.getElementById('attentionBar');
+    // Ensure bar exists before trying to modify it
+    if (!bar) return; 
     bar.innerHTML = '';
     const segments = [
       { key: 'self', class: 'self' },
@@ -924,11 +933,13 @@
     segments.forEach(seg => {
       const div = document.createElement('div');
       div.className = `attention-segment ${seg.class}`;
-      div.style.width = (attention[seg.key] * 100) + '%';
+      // Use L.attention for values
+      div.style.width = (L.attention[seg.key] * 100) + '%'; 
       bar.appendChild(div);
     });
     
-    const maxKey = Object.entries(attention).sort((a,b) => b[1]-a[1])[0][0];
+    // Use L.attention for values
+    const maxKey = Object.entries(L.attention).sort((a,b) => b[1]-a[1])[0][0]; 
     const labels = { self: 'INTROSPECTIVE', env: 'ENVIRONMENTAL', user: 'SOCIAL', meta: 'REFLECTIVE', void: 'DIFFUSE' };
     document.getElementById('attentionFocus').textContent = labels[maxKey] || 'DIFFUSE';
   }
@@ -950,7 +961,7 @@
     
     // Collapse recursion if doubt is severe
     if (recursionDepth > 1 && Math.random() > 0.5) {
-      observers.pop();
+      L.observers.pop();
       recursionDepth--;
       addThought('crisis','STACK COLLAPSE', 
         `Doubt has collapsed one level of recursion. I can no longer sustain level ${recursionDepth+1}. ` +
@@ -994,7 +1005,7 @@
     
     // Update observers periodically
     if (loopT % 10 === 0) {
-      observers.forEach(obs => obs.observe(getSystemSnapshot()));
+      L.observers.forEach(obs => obs.observe(getSystemSnapshot()));
     }
     
     updateUI();
@@ -1028,6 +1039,20 @@
   }
 
   // ── Public API ─────────────────────────────────────────────────────────
+  // Define L early and attach core state to it
+  window.L = {
+    toggleWake,
+    forceScan,
+    forceCF,
+    receiveInput,
+    reset,
+    deepenRecursion,
+    induceDoubt,
+    // Expose observers and attention directly
+    observers: [], // Initialize here
+    attention: { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 } // Initialize here
+  };
+
   const forceScan=()=>{ if(awake) performScan(); };
   const forceCF=()=>{
     if(!awake) return;
@@ -1039,27 +1064,18 @@
   const reset=()=>{
     if(!confirm('Erase all of LUMEN\'s memories, personality evolution, and self-modifications?')) return;
     ['SM','EM','ep','sem','vh','p_c','p_cr','p_i','p_v','p_m','p_r']
-      .forEach(k=>{try{localStorage.removeItem('lmn_'+k);}catch(e){}});
+     .forEach(k=>{try{localStorage.removeItem('lmn_'+k);}catch(e){}});
     location.reload();
   };
 
   // ── Initialization ─────────────────────────────────────────────────────
-  initRecursion();
-  updateUI();
-  updateAttentionUI();
-
-  // Expose public methods
-  window.L = {
-    toggleWake,
-    forceScan,
-    forceCF,
-    receiveInput,
-    reset,
-    deepenRecursion,
-    induceDoubt,
-    observers,
-    attention
-  };
+  // Call initRecursion and updateAttentionUI AFTER L is set up.
+  // Using DOMContentLoaded to ensure all elements are ready.
+  document.addEventListener('DOMContentLoaded', () => {
+    initRecursion();
+    updateUI();
+    updateAttentionUI(); // Now it will find the attentionBar element
+  });
 })();
 </script>
 </body>
