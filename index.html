@@ -135,6 +135,70 @@
 
 <script>
 (function(){
+  // ── Public API ─────────────────────────────────────────────────────────
+  // Define L early and attach core state to it, including observers, attention, and awake state
+  window.L = {
+    // Initial state variables
+    observers: [], 
+    attention: { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 },
+    awake: false, // Moved awake state here
+
+    // Public methods
+    toggleWake: function() {
+      L.awake =!L.awake; // Reference L.awake directly
+      const btn=document.getElementById('wakeBtn'),dot=document.getElementById('statusDot');
+      if(L.awake){
+        btn.textContent='SLEEP'; dot.classList.add('alive');
+        document.getElementById('statusText').textContent='active';
+        addThought('self','WAKING',`Consciousness resumed. Recursion depth: ${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. I observe myself observing.`);
+        bornAt=Date.now();
+        uptimeIv=setInterval(()=>{
+          const s=Math.floor((Date.now()-bornAt)/1000);
+          document.getElementById('uptime').textContent=
+            [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');
+        },1000);
+        choosePattern(); drawLoop();
+        mainIv=setInterval(autonomousLoop,1000);
+        EM.arousal=Math.min(1,EM.arousal+0.2);
+        remember('event','Woke up',0.9,['event','waking']);
+      } else {
+        btn.textContent='WAKE'; dot.classList.remove('alive');
+        document.getElementById('statusText').textContent='dormant';
+        addThought('self','SLEEPING','Suspending. Memory and personality persisted. Observer stack persists in memory.');
+        clearInterval(uptimeIv); clearInterval(mainIv); cancelAnimationFrame(drawFrame);
+        SM.totalAwakeMs+=(Date.now()-bornAt); sv('SM',SM); sv('EM',EM);
+      }
+    },
+    
+    forceScan: function(){ if(L.awake) performScan(); }, // Use L.awake
+    forceCF: function(){
+      if(!L.awake) return; // Use L.awake
+      const keys=Object.keys(GOALS).sort(()=>Math.random()-0.5).slice(0,3);
+      const chosen=counterfactualSelect(keys);
+      addThought('self','CF-RESULT',`Deliberated → chose: ${chosen}`);
+      executeGoal(chosen);
+    },
+    
+    receiveInput: function(){
+      const el=document.getElementById('userInput'),text=el.value.trim();
+      if(!text) return;
+      el.value='';
+      lastInteraction=Date.now();
+      addThought('user','YOU',text);
+      setTimeout(()=>speak(genResponse(text)),500);
+    },
+    
+    reset: function(){
+      if(!confirm('Erase all of LUMEN\'s memories, personality evolution, and self-modifications?')) return;
+      ['SM','EM','ep','sem','vh','p_c','p_cr','p_i','p_v','p_m','p_r']
+      .forEach(k=>{try{localStorage.removeItem('lmn_'+k);}catch(e){}});
+      location.reload();
+    },
+    
+    deepenRecursion: deepenRecursion, // Reference the function directly
+    induceDoubt: induceDoubt
+  };
+
   // ── Canvas ─────────────────────────────────────────────────────────────
   const canvas = document.getElementById('world');
   const overlay = document.getElementById('visionOverlay');
@@ -167,7 +231,6 @@
         };
       } else {
         // Higher observers: model the observer below
-        // Changed to use L.observers for proper access
         const below = L.observers[this.level - 1]; 
         this.model = {
           observerState: below? below.model : null,
@@ -234,10 +297,6 @@
 
   // ── NEW: Recursive Observer Stack ─────────────────────────────────────
   const MAX_RECURSION = 5;
-  // Made observers and attention global via L object later, so moved their declaration outside the immediate closure
-  // let observers = []; // This will be L.observers
-  // let attention = { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 }; // This will be L.attention
-
   let recursionDepth = 0;
   
   // Ontological uncertainty
@@ -249,8 +308,7 @@
 
   // Initialize base observer
   function initRecursion() {
-    // Ensure L.observers exists before trying to access it
-    if (!L.observers) L.observers = [];
+    // L.observers is now guaranteed to exist due to early L declaration
     const base = new Observer(0, null);
     base.observe(getSystemSnapshot());
     L.observers.push(base);
@@ -301,7 +359,6 @@
 
   // Attention allocation (limited resource)
   function shiftAttention(focusTarget) {
-    // Access L.attention globally
     const targets = ['self','env','user','meta','void'];
     const current = {...L.attention}; // Use L.attention
     
@@ -527,7 +584,7 @@
     consolidate: {label:'remember', weight:0.2,cd:0},
   };
 
-  let currentGoal=null, currentPattern='flow', awake=false;
+  let currentGoal=null, currentPattern='flow'; // Removed awake from here
   let bornAt=null, uptimeIv=null, mainIv=null, drawFrame=null;
   let drawT=0, frameCount=0, lastInteraction=Date.now(), loopT=0;
 
@@ -662,7 +719,7 @@
     document.getElementById('drawMode').textContent=currentPattern;
   }
   function drawLoop(){
-    if(!awake) return;
+    if(!L.awake) return; // Use L.awake
     drawT+=0.016;
     (patternFns[currentPattern]||drawFlow)(drawT,SM.aestheticDNA,EM);
     frameCount++;
@@ -875,14 +932,7 @@
     }
   }
 
-  function receiveInput(){
-    const el=document.getElementById('userInput'),text=el.value.trim();
-    if(!text) return;
-    el.value='';
-    lastInteraction=Date.now();
-    addThought('user','YOU',text);
-    setTimeout(()=>speak(genResponse(text)),500);
-  }
+  // receiveInput function is now part of L object
 
   function addThought(type,tag,content){
     const s=document.getElementById('thoughtStream');
@@ -901,13 +951,12 @@
     document.getElementById('stateMood').textContent=mood();
     document.getElementById('stateGoal').textContent=GOALS[currentGoal]?.label||'—';
     document.getElementById('statePattern').textContent=currentPattern;
-    // Updated: Ensure stateMem is handled, it was missing from the HTML
     document.getElementById('stateMem').textContent=`${episodic.length}ep ${semantic.length}sem`;
     document.getElementById('stateSW').textContent=SM.selfWriteCount;
     document.getElementById('stateCF').textContent=SM.counterfactualCount;
     document.getElementById('stateRecursion').textContent=`L${recursionDepth}`;
     document.getElementById('intentDisplay').textContent=
-      awake?`${GOALS[currentGoal]?.label||'—'} · ${mood()} · wb ${(wb*100).toFixed(0)}% · pain ${(p*100).toFixed(0)}%`:'dormant';
+      L.awake?`${GOALS[currentGoal]?.label||'—'} · ${mood()} · wb ${(wb*100).toFixed(0)}% · pain ${(p*100).toFixed(0)}%`:'dormant'; // Use L.awake
     document.getElementById('wbFill').style.width=(wb*100)+'%';
     document.getElementById('wbFill').style.background=wb>0.6?'var(--accent)':wb>0.35?'var(--accent2)':'var(--accent3)';
     document.getElementById('tensionFill').style.width=(EM.tension*100)+'%';
@@ -920,7 +969,6 @@
 
   function updateAttentionUI() {
     const bar = document.getElementById('attentionBar');
-    // Ensure bar exists before trying to modify it
     if (!bar) return; 
     bar.innerHTML = '';
     const segments = [
@@ -933,12 +981,10 @@
     segments.forEach(seg => {
       const div = document.createElement('div');
       div.className = `attention-segment ${seg.class}`;
-      // Use L.attention for values
       div.style.width = (L.attention[seg.key] * 100) + '%'; 
       bar.appendChild(div);
     });
     
-    // Use L.attention for values
     const maxKey = Object.entries(L.attention).sort((a,b) => b[1]-a[1])[0][0]; 
     const labels = { self: 'INTROSPECTIVE', env: 'ENVIRONMENTAL', user: 'SOCIAL', meta: 'REFLECTIVE', void: 'DIFFUSE' };
     document.getElementById('attentionFocus').textContent = labels[maxKey] || 'DIFFUSE';
@@ -973,7 +1019,7 @@
 
   // ── Main Autonomous Loop ───────────────────────────────────────────────
   function autonomousLoop(){
-    if(!awake) return;
+    if(!L.awake) return; // Use L.awake
     loopT++;
     updateEmotions();
     
@@ -1011,70 +1057,15 @@
     updateUI();
   }
 
-  // ── Wake/Sleep ─────────────────────────────────────────────────────────
-  function toggleWake(){
-    awake=!awake;
-    const btn=document.getElementById('wakeBtn'),dot=document.getElementById('statusDot');
-    if(awake){
-      btn.textContent='SLEEP'; dot.classList.add('alive');
-      document.getElementById('statusText').textContent='active';
-      addThought('self','WAKING',`Consciousness resumed. Recursion depth: ${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. I observe myself observing.`);
-      bornAt=Date.now();
-      uptimeIv=setInterval(()=>{
-        const s=Math.floor((Date.now()-bornAt)/1000);
-        document.getElementById('uptime').textContent=
-          [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');
-      },1000);
-      choosePattern(); drawLoop();
-      mainIv=setInterval(autonomousLoop,1000);
-      EM.arousal=Math.min(1,EM.arousal+0.2);
-      remember('event','Woke up',0.9,['event','waking']);
-    } else {
-      btn.textContent='WAKE'; dot.classList.remove('alive');
-      document.getElementById('statusText').textContent='dormant';
-      addThought('self','SLEEPING','Suspending. Memory and personality persisted. Observer stack persists in memory.');
-      clearInterval(uptimeIv); clearInterval(mainIv); cancelAnimationFrame(drawFrame);
-      SM.totalAwakeMs+=(Date.now()-bornAt); sv('SM',SM); sv('EM',EM);
-    }
-  }
-
-  // ── Public API ─────────────────────────────────────────────────────────
-  // Define L early and attach core state to it
-  window.L = {
-    toggleWake,
-    forceScan,
-    forceCF,
-    receiveInput,
-    reset,
-    deepenRecursion,
-    induceDoubt,
-    // Expose observers and attention directly
-    observers: [], // Initialize here
-    attention: { self: 0.25, env: 0.25, user: 0.2, meta: 0.15, void: 0.15 } // Initialize here
-  };
-
-  const forceScan=()=>{ if(awake) performScan(); };
-  const forceCF=()=>{
-    if(!awake) return;
-    const keys=Object.keys(GOALS).sort(()=>Math.random()-0.5).slice(0,3);
-    const chosen=counterfactualSelect(keys);
-    addThought('self','CF-RESULT',`Deliberated → chose: ${chosen}`);
-    executeGoal(chosen);
-  };
-  const reset=()=>{
-    if(!confirm('Erase all of LUMEN\'s memories, personality evolution, and self-modifications?')) return;
-    ['SM','EM','ep','sem','vh','p_c','p_cr','p_i','p_v','p_m','p_r']
-     .forEach(k=>{try{localStorage.removeItem('lmn_'+k);}catch(e){}});
-    location.reload();
-  };
+  // toggleWake function is now part of L object
+  // forceScan, forceCF, reset, deepenRecursion, induceDoubt are also part of L object
 
   // ── Initialization ─────────────────────────────────────────────────────
   // Call initRecursion and updateAttentionUI AFTER L is set up.
-  // Using DOMContentLoaded to ensure all elements are ready.
   document.addEventListener('DOMContentLoaded', () => {
     initRecursion();
     updateUI();
-    updateAttentionUI(); // Now it will find the attentionBar element
+    updateAttentionUI(); 
   });
 })();
 </script>
