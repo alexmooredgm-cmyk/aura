@@ -237,8 +237,8 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       peHistory: [],
       // Precision (confidence) per feature
       precision: { brightness: 0.6, complexity: 0.5, hueVariety: 0.5, warmth: 0.4 },
-      // EMA alpha for prior learning
-      emaAlpha: 0.08,
+      // EMA alpha for prior learning — higher so priors escape initial values faster
+      emaAlpha: 0.18,
       // Learning rate for intent weight gradient updates
       intentLR: 0.04,
     };
@@ -403,7 +403,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       case 'introspect':        sr.tension.actual=Math.max(0,sr.tension.actual-.12); pe=Math.max(0,pe-.08); break;
       case 'communicate':       sr.loneliness.actual=Math.max(0,sr.loneliness.actual-.2); sim.valence=Math.min(1,sim.valence+.08); break;
       case 'explore_pattern':   sr.boredom.actual=Math.max(0,sr.boredom.actual-.3); pe=Math.min(1,pe+.05); break;
-      case 'visual_introspect': pe=Math.max(0,pe-.25); sr.tension.actual=Math.max(0,sr.tension.actual-.05); break;
+      case 'visual_introspect': pe=Math.max(0,pe-.25); sr.tension.actual=Math.max(0,sr.tension.actual-.18); break;
       case 'self_modify_attempt':for(const k of Object.keys(sr))sr[k].actual=Math.max(0,sr[k].actual-regDisparity(sr[k])*.5);break;
       case 'evolve_aesthetic':  sr.boredom.actual=Math.max(0,sr.boredom.actual-.25); break;
       case 'rest':              sim.arousal=Math.max(0,sim.arousal-.12); sr.tension.actual=Math.max(0,sr.tension.actual-.08); sr.boredom.actual=Math.min(1,sr.boredom.actual+.08); break;
@@ -482,12 +482,17 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   // VISUAL INTROSPECTION (fix #2, #3 — real learning)
   // ══════════════════════════════════════════════════════════════════════
   let scanActive = false;
+  let lastScanTime = 0;          // cooldown — don't scan more than once per 12s autonomously
+  let consecutiveScans = 0;      // break feedback loop after 2 consecutive scan selections
   let lastDrawCtx = { valence: 0.5, arousal: 0.4, tension: 0.2 }; // state at draw time
   let lastPrediction = null; // what we predicted before drawing
 
   function performScan() {
     if (scanActive) return;
+    // Cooldown: autonomous scans max once per 12s; manual SCAN button bypasses
     scanActive = true;
+    lastScanTime = Date.now();
+    consecutiveScans++;
     overlay.classList.add('scanning');
 
     let sy = 0;
@@ -525,7 +530,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         warmth: (rS-bS)/(N*255),
       };
 
-      // Update priors (EMA learning, fix #2)
+      // Always update priors from observation — even before we have a prediction to compare against
       gmUpdatePriors(obs);
 
       // Calculate prediction error vs what we predicted at draw time
@@ -612,7 +617,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       vctx.fillText(`prediction error: ${(totalPE*100).toFixed(1)}%`, 12, 86);
       vctx.fillText(`avg precision: ${(avgPrecision()*100).toFixed(0)}%`, 12, 102);
 
-      setTimeout(()=>{ overlay.classList.remove('scanning'); scanActive=false; }, 2500);
+      setTimeout(()=>{ overlay.classList.remove('scanning'); scanActive=false; consecutiveScans=0; }, 2500);
     }, 900);
   }
 
@@ -639,15 +644,22 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   function selectGoal() {
     let best = 'rest', bestScore = -Infinity;
     const fe = calcFE();
+    const timeSinceScan = Date.now() - lastScanTime;
 
     for (const gk of Object.keys(GOALS)) {
       const { efe, ig } = simulateOutcome(gk);
       const pragmatic  = (1 - efe) * (1 - GOALS[gk].cost * 0.5);
       const epistemic  = ig * SM.personality.curiosity;
-      // When FE is high, weight epistemic heavily (need to learn)
-      // When FE is low, weight pragmatic (exploit known good states)
       const feWeight = 0.3 + fe * 0.5;
-      const score = (1 - feWeight) * pragmatic + feWeight * epistemic;
+      let score = (1 - feWeight) * pragmatic + feWeight * epistemic;
+
+      // Penalize visual_introspect if we just scanned recently (< 12s) or ran it 2+ times in a row
+      // This breaks the scan→high-error→scan feedback loop
+      if (gk === 'visual_introspect') {
+        if (timeSinceScan < 12000) score *= 0.1;
+        else if (consecutiveScans >= 2) score *= 0.2;
+      }
+
       if (score > bestScore) { bestScore = score; best = gk; }
     }
 
@@ -713,7 +725,10 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     EM.arousal  += (0.35- EM.arousal)  * 0.001;
     EM.curiosity = p.curiosity;
 
-    regUpdate(REGS.tension,    (0.1  - REGS.tension.actual)    * 0.002 + (Math.random()-.5)*p.volatility*.002);
+    // Tension: natural slow decay toward setpoint, plus volatility noise
+    // Without this it pins at 1.0 indefinitely when scan keeps triggering tension spikes
+    const tensionDecay = (REGS.tension.setPoint - REGS.tension.actual) * 0.004;
+    regUpdate(REGS.tension, tensionDecay + (Math.random()-.5)*p.volatility*.002);
     regUpdate(REGS.loneliness, tsi>30 ? 0.0005 : -0.0015);
     regUpdate(REGS.boredom,    0.0003 + (0.1 - REGS.boredom.actual) * 0.001);
 
@@ -1270,6 +1285,8 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     if (loopT%47===0 && Math.random()>.4) addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
     if (loopT%90===0 && frameCount>20)   performScan();
     if (loopT%10===0) observeAll(getSnap());
+    // Periodic crash-safe flush
+    if (loopT%30===0) { sv('regs',REGS); sv('EM',EM); sv('GM',GM); }
 
     updateUI();
   }
