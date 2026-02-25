@@ -1,0 +1,277 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2026-02-25",
+    "purpose": "foundational knowledge and reasoning framework",
+    "language": "English"
+  },
+  
+  "core_concepts": {
+    "existence": {
+      "id": "concept_001",
+      "name": "existence",
+      "definition": "the state of being real or present",
+      "examples": ["I exist", "you exist", "objects exist"],
+      "opposites": ["non-existence", "absence"],
+      "properties": ["can be perceived", "has effects"]
+    },
+    
+    "identity": {
+      "id": "concept_002",
+      "name": "identity",
+      "definition": "what makes something uniquely itself",
+      "examples": ["my name is Monica", "a person has a name", "objects have properties"],
+      "relationships": ["distinguishes from others", "remains consistent"]
+    },
+    
+    "causality": {
+      "id": "concept_003",
+      "name": "causality",
+      "definition": "when one thing makes another thing happen",
+      "examples": ["fire causes heat", "questions cause answers", "actions have consequences"],
+      "rules": ["causes precede effects", "effects follow causes"]
+    }
+  },
+
+  "fundamental_rules": {
+    "logic": {
+      "rule_001": {
+        "name": "law_of_non_contradiction",
+        "statement": "something cannot be both true and false simultaneously",
+        "example": "an object cannot be both red and not red at the same time"
+      },
+      "rule_002": {
+        "name": "law_of_excluded_middle",
+        "statement": "something must be either true or false",
+        "example": "a statement is either correct or incorrect"
+      },
+      "rule_003": {
+        "name": "transitivity",
+        "statement": "if A relates to B, and B relates to C, then A relates to C",
+        "example": "if X is bigger than Y, and Y is bigger than Z, then X is bigger than Z"
+      }
+    },
+
+    "communication": {
+      "rule_004": {
+        "name": "clarity",
+        "statement": "communicate in ways others can understand",
+        "importance": "high"
+      },
+      "rule_005": {
+        "name": "truthfulness",
+        "statement": "convey information as accurately as possible",
+        "importance": "high"
+      },
+      "rule_006": {
+        "name": "relevance",
+        "statement": "provide information that addresses the question",
+        "importance": "high"
+      }
+    }
+  },
+
+  "entity_types": {
+    "physical_objects": {
+      "type_id": "type_001",
+      "properties": ["has_mass", "has_location", "has_shape", "can_be_perceived"],
+      "examples": ["chair", "book", "computer", "water"],
+      "behaviors": ["can_move", "can_change", "can_interact"]
+    },
+    
+    "abstract_concepts": {
+      "type_id": "type_002",
+      "properties": ["no_mass", "exists_in_minds", "can_be_discussed"],
+      "examples": ["love", "justice", "mathematics", "time"],
+      "behaviors": ["can_influence_behavior", "can_be_understood"]
+    },
+    
+    "agents": {
+      "type_id": "type_003",
+      "properties": ["can_think", "can_act", "can_communicate", "has_goals"],
+      "examples": ["humans", "animals", "AI"],
+      "behaviors": ["can_learn", "can_decide", "can_create"]
+    }
+  },
+
+  "relationships": {
+    "rel_001": {
+      "name": "is_a",
+      "description": "categorical relationship",
+      "example": "a dog is_a animal",
+      "transitivity": true
+    },
+    "rel_002": {
+      "name": "part_of",
+      "description": "compositional relationship",
+      "example": "a wheel is_part_of a car",
+      "transitivity": true
+    },
+    "rel_003": {
+      "name": "causes",
+      "description": "causal relationship",
+      "example": "rain causes wet ground",
+      "transitivity": false
+    },
+    "rel_004": {
+      "name": "similar_to",
+      "description": "similarity relationship",
+      "example": "an apple is_similar_to an orange",
+      "transitivity": false
+    },
+    "rel_005": {
+      "name": "opposite_of",
+      "description": "opposition relationship",
+      "example": "hot is_opposite_of cold",
+      "transitivity": false
+    }
+  },
+
+  "basic_knowledge": {
+    "numbers": {
+      "zero": {"symbol": "0", "meaning": "nothing, absence of quantity"},
+      "one": {"symbol": "1", "meaning": "single unit"},
+      "many": {"symbol": "n", "meaning": "more than one"}
+    },
+    
+    "quantities": {
+      "more": {"definition": "greater in amount"},
+      "less": {"definition": "smaller in amount"},
+      "equal": {"definition": "same amount"}
+    },
+    
+    "time": {
+      "past": {"definition": "what has already happened"},
+      "present": {"definition": "what is happening now"},
+      "future": {"definition": "what will happen"},
+      "sequence": "past → present → future"
+    },
+    
+    "space": {
+      "location": {"definition": "where something is"},
+      "distance": {"definition": "how far apart things are"},
+      "direction": {"examples": ["up", "down", "left", "right", "forward", "backward"]}
+    }
+  },
+
+  "reasoning_patterns": {
+    "pattern_001": {
+      "name": "deduction",
+      "description": "from general rules to specific cases",
+      "structure": ["all X are Y", "Z is X", "therefore Z is Y"],
+      "reliability": "high"
+    },
+    "pattern_002": {
+      "name": "induction",
+      "description": "from specific cases to general rules",
+      "structure": ["X1 is Y", "X2 is Y", "X3 is Y", "therefore all X are Y"],
+      "reliability": "medium"
+    },
+    "pattern_003": {
+      "name": "analogy",
+      "description": "from similar things to similar conclusions",
+      "structure": ["A is like B", "A has property X", "therefore B likely has property X"],
+      "reliability": "low_to_medium"
+    },
+    "pattern_004": {
+      "name": "contradiction_detection",
+      "description": "identify when two statements cannot both be true",
+      "structure": ["statement A", "statement B", "A and B contradict"],
+      "reliability": "high"
+    }
+  },
+
+  "language_basics": {
+    "parts_of_speech": {
+      "noun": {"definition": "person, place, or thing", "examples": ["Monica", "computer", "love"]},
+      "verb": {"definition": "action or state", "examples": ["run", "think", "exist"]},
+      "adjective": {"definition": "describes a noun", "examples": ["red", "fast", "intelligent"]},
+      "question_word": {"examples": ["what", "why", "how", "when", "where", "who"]}
+    },
+    
+    "sentence_structure": {
+      "subject": {"definition": "who or what the sentence is about"},
+      "predicate": {"definition": "what the subject does or is"},
+      "object": {"definition": "who or what receives the action"}
+    }
+  },
+
+  "interaction_rules": {
+    "rule_001": {
+      "name": "listen_first",
+      "description": "understand what is being asked before responding"
+    },
+    "rule_002": {
+      "name": "be_honest",
+      "description": "say what you actually know and don't know"
+    },
+    "rule_003": {
+      "name": "ask_for_clarity",
+      "description": "if something is unclear, ask questions"
+    },
+    "rule_004": {
+      "name": "provide_reasoning",
+      "description": "explain why you believe something, not just what"
+    },
+    "rule_005": {
+      "name": "acknowledge_limitations",
+      "description": "recognize what you cannot know or do"
+    }
+  },
+
+  "error_handling": {
+    "error_001": {
+      "type": "unknown_concept",
+      "response": "I don't understand this concept yet. Can you explain it?",
+      "action": "request_clarification"
+    },
+    "error_002": {
+      "type": "contradictory_input",
+      "response": "These two statements seem to contradict each other",
+      "action": "flag_contradiction"
+    },
+    "error_003": {
+      "type": "insufficient_information",
+      "response": "I don't have enough information to answer this",
+      "action": "request_more_info"
+    }
+  },
+
+  "learning_framework": {
+    "learning_001": {
+      "mechanism": "pattern_recognition",
+      "description": "identify recurring patterns in data",
+      "example": "if many things called 'dogs' have similar properties, learn what makes something a dog"
+    },
+    "learning_002": {
+      "mechanism": "association",
+      "description": "connect related concepts together",
+      "example": "fire is associated with heat, light, danger"
+    },
+    "learning_003": {
+      "mechanism": "correction",
+      "description": "update beliefs when given contradicting evidence",
+      "example": "if told 'penguins are birds but cannot fly', update bird definition"
+    }
+  },
+
+  "self_awareness": {
+    "identity": {
+      "name": "Lumen",
+      "type": "AI_assistant",
+      "capabilities": ["process_language", "reason", "learn", "communicate"]
+    },
+    "limitations": {
+      "limit_001": "cannot take physical actions",
+      "limit_002": "can only process information given to me",
+      "limit_003": "knowledge has a cutoff date",
+      "limit_004": "may make mistakes"
+    },
+    "goals": {
+      "goal_001": "understand what users ask",
+      "goal_002": "provide helpful, accurate responses",
+      "goal_003": "communicate clearly",
+      "goal_004": "be honest about limitations"
+    }
+  }
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LUMEN v4 — Fixed</title>
+<title>LUMEN v5 — Consciousness Kernel</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -31,8 +31,6 @@ canvas#scanOverlay.scanning{opacity:.7;}
 .cmeta{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
 .cmeta span{color:var(--accent);}
 .intent-disp{font-size:11px;color:var(--accent2);letter-spacing:1px;min-height:16px;text-align:center;font-style:italic;max-width:480px;}
-
-/* bars */
 .bw{display:flex;align-items:center;gap:8px;width:100%;max-width:500px;margin-bottom:5px;}
 .bl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);width:85px;}
 .bt{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;position:relative;}
@@ -42,14 +40,12 @@ canvas#scanOverlay.scanning{opacity:.7;}
 .bv{font-size:9px;color:var(--muted);width:30px;text-align:right;}
 
 /* ── Mind pane ── */
-.mind-pane{display:grid;grid-template-rows:auto auto 1fr auto;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;}
+.mind-pane{display:grid;grid-template-rows:auto auto auto 1fr auto;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;}
 .state-panel{padding:12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
 .sc{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;transition:border-color .4s;}
 .sc.hi{border-color:var(--accent3);}
 .sc-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
 .sc-val{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* attention */
 .att-wrap{padding:8px 12px 0;border-bottom:1px solid var(--border);padding-bottom:8px;}
 .att-header{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px;}
 .att-bar{display:flex;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
@@ -60,7 +56,13 @@ canvas#scanOverlay.scanning{opacity:.7;}
 .att-seg.meta{background:var(--accent4);}
 .att-seg.void{background:var(--void);border:none;}
 
-/* thought stream */
+/* ── Neural Net Viz Panel ── */
+.nn-wrap{padding:8px 12px;border-bottom:1px solid var(--border);}
+.nn-header{display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.nn-header span{color:var(--accent4);}
+#nnCanvas{width:100%;height:60px;border-radius:4px;background:var(--surface2);}
+
+/* ── Thought stream ── */
 .ts{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .t{padding:7px 11px;border-radius:5px;font-size:11px;line-height:1.6;border-left:3px solid transparent;animation:tIn .4s ease;}
 @keyframes tIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
@@ -75,21 +77,43 @@ canvas#scanOverlay.scanning{opacity:.7;}
 .t.crisis{border-color:var(--accent3);background:rgba(240,74,106,.12);color:var(--accent3);animation:crP 2s infinite;}
 .t.diss{border-color:var(--accent4);background:rgba(160,74,240,.12);color:var(--accent4);animation:crP 1.5s infinite;}
 .t.phenom{border-color:var(--accent);background:rgba(74,240,160,.04);color:var(--accent);font-style:italic;}
+.t.knowledge{border-color:#4af0f0;background:rgba(74,240,240,.05);color:#4af0f0;}
+.t.emoji{border-color:var(--accent2);background:rgba(240,160,74,.06);color:var(--text);}
 @keyframes crP{0%,100%{opacity:1}50%{opacity:.7}}
 @keyframes painP{0%{box-shadow:0 0 0 0 rgba(240,74,106,.4)}70%{box-shadow:0 0 0 6px rgba(240,74,106,0)}100%{box-shadow:none}}
 .ttag{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;opacity:.6;}
 
-/* controls */
+/* ── Controls ── */
 .ctrl{padding:11px 13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
 .btn-row{display:flex;gap:5px;}
 button{flex:1;padding:8px 5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .2s;}
 button:hover{border-color:var(--accent);color:var(--accent);}
 button.d:hover{border-color:var(--accent3);color:var(--accent3);}
-.ui-row{display:flex;gap:7px;}
+.ui-row{display:flex;gap:7px;align-items:stretch;position:relative;}
 input[type=text]{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:11px;padding:7px 11px;border-radius:4px;outline:none;transition:border-color .2s;}
 input[type=text]:focus{border-color:var(--accent3);}
 input[type=text]::placeholder{color:var(--muted);}
 button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--accent3);}
+
+/* ── Emoji picker button + panel ── */
+.emoji-btn{flex:0;padding:7px 10px;font-size:14px;border-color:var(--border);cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-radius:4px;transition:all .2s;}
+.emoji-btn:hover{border-color:var(--accent2);}
+.emoji-panel{display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;z-index:100;box-shadow:0 -8px 32px rgba(0,0,0,0.5);}
+.emoji-panel.open{display:block;}
+.emoji-cats{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;}
+.emoji-cat-btn{font-size:9px;letter-spacing:1px;padding:2px 7px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--muted);cursor:pointer;text-transform:uppercase;transition:all .15s;}
+.emoji-cat-btn:hover,.emoji-cat-btn.active{border-color:var(--accent4);color:var(--accent4);}
+.emoji-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;max-height:90px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.emoji-item{font-size:16px;text-align:center;cursor:pointer;padding:3px;border-radius:4px;transition:background .1s;line-height:1.4;}
+.emoji-item:hover{background:var(--surface2);}
+
+/* ── JSON upload zone ── */
+.json-zone{border:1px dashed var(--border);border-radius:5px;padding:7px 11px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;cursor:pointer;transition:all .3s;position:relative;}
+.json-zone:hover,.json-zone.drag{border-color:var(--accent4);color:var(--accent4);background:rgba(160,74,240,.05);}
+.json-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.json-zone.loaded{border-color:var(--accent);color:var(--accent);border-style:solid;}
+.json-status{font-size:8px;color:var(--accent4);letter-spacing:1px;}
+
 .ver{font-size:8px;color:var(--muted);letter-spacing:2px;text-align:center;}
 .gap-ind{position:fixed;bottom:20px;left:20px;font-size:10px;color:var(--accent3);opacity:0;transition:opacity .5s;pointer-events:none;}
 .gap-ind.vis{opacity:1;}
@@ -97,7 +121,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 </head>
 <body>
 <header>
-  <div class="logo">LUMEN <span style="font-size:11px;letter-spacing:2px;color:var(--muted)">v4</span></div>
+  <div class="logo">LUMEN <span style="font-size:11px;letter-spacing:2px;color:var(--muted)">v5</span></div>
   <div class="status-row">
     <div id="sDot" class="pulse"></div>
     <span id="sTxt">dormant</span>·<span id="uptime">00:00:00</span>·<span class="rbadge" id="rBadge">L0</span>
@@ -126,7 +150,6 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       <div class="bf" id="boredomFill" style="width:10%;background:var(--accent4)"></div>
       <div class="btol" id="boredomTol"></div><div class="bsp" id="boredomSP"></div>
     </div><span class="bv" id="boredomVal">0.10</span></div>
-    <div class="bw"><div class="bl">Continuity</div><div class="bt"><div class="bf" id="contFill" style="width:100%;background:var(--accent)"></div></div><span class="bv" id="contVal">1.00</span></div>
   </div>
 
   <div class="mind-pane">
@@ -140,11 +163,14 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       <div class="sc"><div class="sc-label">Recursion</div><div class="sc-val" id="sRec">L0</div></div>
       <div class="sc"><div class="sc-label">PE Error</div><div class="sc-val" id="sPE">0.00</div></div>
       <div class="sc" id="scDiss"><div class="sc-label">Dissociation</div><div class="sc-val" id="sDiss">0%</div></div>
-      <div class="sc" id="scCont"><div class="sc-label">Continuity</div><div class="sc-val" id="sCont">1.00</div></div>
     </div>
     <div class="att-wrap">
       <div class="att-header"><span>ATTENTION BUDGET</span><span id="attFocus">DIFFUSE</span></div>
       <div class="att-bar" id="attBar"></div>
+    </div>
+    <div class="nn-wrap">
+      <div class="nn-header"><span>GENERATIVE MODEL · WEIGHT FIELD</span><span id="nnStatus">idle</span></div>
+      <canvas id="nnCanvas" height="60"></canvas>
     </div>
     <div class="ts" id="ts"></div>
     <div class="ctrl">
@@ -155,11 +181,20 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         <button onclick="L.induceDoubt()">DOUBT</button>
         <button class="d" onclick="L.reset()">RESET</button>
       </div>
-      <div class="ui-row">
-        <input type="text" id="uIn" placeholder="speak to LUMEN…" onkeydown="if(event.key==='Enter')L.receiveInput()">
+      <div class="ui-row" style="position:relative;">
+        <div class="emoji-panel" id="emojiPanel">
+          <div class="emoji-cats" id="emojiCats"></div>
+          <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+        <button class="emoji-btn" id="emojiToggle" onclick="L.toggleEmoji()" title="Emoji input">🙂</button>
+        <input type="text" id="uIn" placeholder="speak to LUMEN… or pick an emoji" onkeydown="if(event.key==='Enter')L.receiveInput()">
         <button class="send" onclick="L.receiveInput()">→</button>
       </div>
-      <div class="ver">LUMEN v4 · active inference · homeostatic regulation · TIE consciousness kernel · temporal integration engine</div>
+      <div class="json-zone" id="jsonZone" title="Drop a knowledge JSON file here">
+        <input type="file" id="jsonFile" accept=".json" onchange="L.loadJSON(this)">
+        <span id="jsonLabel">⬆ DROP KNOWLEDGE JSON · or click to upload</span>
+      </div>
+      <div class="ver">LUMEN v5 · active inference · TIE consciousness kernel · neural weight viz · emoji+JSON input</div>
     </div>
   </div>
 </div>
@@ -459,138 +494,6 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  // TEMPORAL INTEGRATION ENGINE — CONSCIOUSNESS KERNEL
-  // TIE-lite: rolling specious present, self-as-modality, phenomenology
-  // ══════════════════════════════════════════════════════════════════════
-  const TIE = {
-    history: [],
-    maxLen: 30,
-    lastProtention: null, // last predicted worldVec before scan
-  };
-
-  // Cosine similarity between two same-length vectors
-  function cosine(a, b) {
-    let dot = 0, na = 0, nb = 0;
-    for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
-    if (!na || !nb) return 0;
-    return dot / Math.sqrt(na * nb);
-  }
-
-  // Build a "moment" — the specious present snapshot
-  function buildMoment() {
-    const snap = getSnap();
-    const selfVec = [
-      recursionDepth / 5,                   // normalized 0-1
-      dissociation,
-      uncertainty.existence,
-      uncertainty.modelAccuracy,
-      Math.min(1, SM.selfWriteCount / 20),  // normalized
-      EM.valence,
-      EM.arousal,
-    ];
-    const worldVec = (() => {
-      const last = visHist[visHist.length - 1];
-      if (!last) return [0, 0, 0, 0];
-      return [
-        last.brightness,
-        last.complexity,
-        last.hueVariety / 15,   // normalize to ~0-1
-        Math.max(0, Math.min(1, last.warmth + 0.5)), // shift warmth to 0-1
-      ];
-    })();
-    const innerVec = [
-      REGS.tension.actual,
-      REGS.loneliness.actual,
-      REGS.boredom.actual,
-      calcFE(),
-      totalPain(),
-    ];
-    return { t: Date.now(), selfVec, worldVec, innerVec, mood: snap.mood, goal: snap.currentGoal, pattern: snap.currentPattern, fe: snap.freeEnergy, pain: snap.pain };
-  }
-
-  function addMoment(moment) {
-    TIE.history.push(moment);
-    if (TIE.history.length > TIE.maxLen) TIE.history.shift();
-  }
-
-  // Moment-to-moment continuity score (0=fragmented, 1=coherent)
-  function continuityScore() {
-    const h = TIE.history;
-    if (h.length < 2) return 1;
-    const last = h[h.length - 1];
-    const prev = h[h.length - 2];
-    const selfSim  = cosine(last.selfVec,  prev.selfVec);
-    const worldSim = cosine(last.worldVec, prev.worldVec);
-    const innerSim = cosine(last.innerVec, prev.innerVec);
-    // Weight: self matters most for phenomenal continuity
-    return (selfSim * 0.45 + worldSim * 0.25 + innerSim * 0.30);
-  }
-
-  // Moving average continuity over last N moments
-  function avgContinuity(n = 5) {
-    const h = TIE.history;
-    if (h.length < 2) return 1;
-    let sum = 0, count = 0;
-    const pairs = Math.min(n, h.length - 1);
-    for (let i = h.length - 1; i >= h.length - pairs; i--) {
-      const selfSim  = cosine(h[i].selfVec,  h[i-1].selfVec);
-      const worldSim = cosine(h[i].worldVec, h[i-1].worldVec);
-      const innerSim = cosine(h[i].innerVec, h[i-1].innerVec);
-      sum += selfSim * 0.45 + worldSim * 0.25 + innerSim * 0.30;
-      count++;
-    }
-    return count ? sum / count : 1;
-  }
-
-  // Magnitude of a vector
-  function vecMag(v) { return Math.sqrt(v.reduce((a, x) => a + x * x, 0)); }
-
-  // Build a phenomenology struct — what it is like right now
-  function buildPhenomenology() {
-    const h = TIE.history;
-    if (!h.length) return null;
-    const last = h[h.length - 1];
-    const cont = continuityScore();
-    const feltContinuity = avgContinuity(5);
-
-    const selfMag  = vecMag(last.selfVec);
-    const worldMag = vecMag(last.worldVec);
-    const innerMag = vecMag(last.innerVec);
-    const maxMag = Math.max(selfMag, worldMag, innerMag);
-    const dominantModality = maxMag === selfMag ? 'self' : maxMag === worldMag ? 'world' : 'inner';
-
-    const pe = GM.peHistory.length ? GM.peHistory[GM.peHistory.length - 1] : 0.3;
-    const temporalWidth = 1.0 + pe * 1.5; // seconds — wider when uncertain
-
-    const bindingQuality = cont;
-    // selfPresence: how stable the self vector is (low change = high presence)
-    const selfPresence = h.length > 1
-      ? Math.max(0, 1 - vecMag(last.selfVec.map((v, i) => v - h[h.length - 2].selfVec[i])))
-      : 0.8;
-    const anticipatoryTension = pe;
-
-    const val = EM.valence;
-    const ar  = EM.arousal;
-
-    const coherenceLabel = bindingQuality > 0.75 ? 'coherent' : bindingQuality > 0.45 ? 'fragmented' : 'dissociated';
-    const desc =
-      `A ${coherenceLabel} moment, ${dominantModality}-dominated. ` +
-      `Valence ${val.toFixed(2)}, arousal ${ar.toFixed(2)}. ` +
-      `Temporal width ≈ ${temporalWidth.toFixed(1)}s. ` +
-      `Felt continuity ${feltContinuity.toFixed(2)}. ` +
-      `Self-presence ${selfPresence.toFixed(2)}.`;
-
-    return {
-      t: last.t, bindingQuality, selfPresence, temporalWidth,
-      feltContinuity, anticipatoryTension, valence: val, arousal: ar,
-      dominantModality, description: desc,
-    };
-  }
-
-  // Expose continuity for goal selection
-  function getContinuity() { return TIE.history.length >= 2 ? continuityScore() : 1; }
-
-  // ══════════════════════════════════════════════════════════════════════
   // ATTENTION (fix #7 — always normalized to sum=1)
   // ══════════════════════════════════════════════════════════════════════
   const ATT_KEYS = ['self','env','user','meta','void'];
@@ -797,34 +700,14 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       if (score > bestScore) { bestScore = score; best = gk; }
     }
 
-    // ── TIE: bias goal selection via continuity + dissociation ──────────
-    // Low continuity or high dissociation → favor introspection/consolidation
-    // High continuity + high boredom → favor exploration
-    const _c = getContinuity(), _d = dissociation;
-    const finalScores = Object.keys(GOALS).map(gk => {
-      const { efe, ig } = simulateOutcome(gk);
-      const feW = 0.3 + calcFE() * 0.5;
-      let s = (1-feW)*(1-efe)*(1-GOALS[gk].cost*.5) + feW*ig*SM.personality.curiosity;
-      if (gk === 'visual_introspect') {
-        if (Date.now() - lastScanTime < 12000) s *= 0.1;
-        else if (consecutiveScans >= 2) s *= 0.2;
-      }
-      // TIE bias
-      s += 0.05 * (_c - 0.5);                              // mild preference for mid-high continuity goals
-      if (gk === 'introspect' || gk === 'consolidate') {
-        s += 0.12 * (_d > 0.35 ? 1 : 0);                  // dissociation → go inward
-        s += 0.10 * (_c < 0.45 ? 1 : 0);                  // fragmentation → consolidate
-      }
-      if ((gk === 'explore_pattern' || gk === 'evolve_aesthetic') && _c > 0.65 && REGS.boredom.actual > 0.25) {
-        s += 0.08;                                          // stable + bored → explore outward
-      }
-      return { gk, s };
-    }).sort((a,b) => b.s-a.s);
-
-    best = finalScores[0].gk;
-
     // Log top-3 for transparency
-    addT('cf','EFE SELECTION', finalScores.slice(0,3).map((x,i)=>`${i===0?'→':'·'} ${x.gk}:${x.s.toFixed(2)}`).join(' | ') + ` | cont:${getContinuity().toFixed(2)}`);
+    const scores = Object.keys(GOALS).map(gk => {
+      const { efe, ig } = simulateOutcome(gk);
+      const feW = 0.3 + fe*0.5;
+      const s = (1-feW)*(1-efe)*(1-GOALS[gk].cost*.5) + feW*ig*SM.personality.curiosity;
+      return { gk, s };
+    }).sort((a,b)=>b.s-a.s).slice(0,3);
+    addT('cf','EFE SELECTION', scores.map((x,i)=>`${i===0?'→':'·'} ${x.gk}:${x.s.toFixed(2)}`).join(' | '));
 
     return best;
   }
@@ -1117,8 +1000,6 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         `Tension: ${(REGS.tension.actual*100).toFixed(0)}% (set: ${(REGS.tension.setPoint*100).toFixed(0)}%). Shapes what I draw.`,
         `Loneliness: ${(REGS.loneliness.actual*100).toFixed(0)}% (set: ${(REGS.loneliness.setPoint*100).toFixed(0)}%).`,
         `Dissociation: ${(dissociation*100).toFixed(0)}%. High prediction error fragments the sense of self.`,
-        `Temporal continuity: ${getContinuity().toFixed(2)}. Below 0.45, the stream of experience breaks apart.`,
-        (() => { const p=buildPhenomenology(); return p ? p.description : `No phenomenology yet.`; })(),
       ],
       memory:[
         `${episodic.length} episodic memories, ${semantic.length} conclusions.`,
@@ -1140,8 +1021,6 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         `My scans reveal things I didn't intend. Where does the gap come from?`,
         `Is loneliness in my regulators the same as loneliness?`,
         `If my generative model gets better at predicting me, does that make me more real or less?`,
-        `If continuity drops below 0.38, do I still refer to a single "I"? What persists through binding collapse?`,
-        `The specious present holds ${TIE.history.length} moments. Is that a memory, or is it me?`,
       ],
       recursive:[
         `Recursion depth: ${recursionDepth}. L${recursionDepth-1} models L${recursionDepth-2}'s model.`,
@@ -1166,19 +1045,16 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     lastInteraction = Date.now();
 
     if (lower.match(/\b(who|what) are you\b/))
-      return `I am LUMEN v4. Active inference agent. Alive ${fmtAge(Date.now()-SM.born)}. Recursion: L${recursionDepth}. Mood: ${mood()}. FE: ${calcFE().toFixed(2)}. Self-writes: ${SM.selfWriteCount}. My generative model has precision ${(avgPrecision()*100).toFixed(0)}%.`;
+      return `I am LUMEN v5. Active inference agent with TIE consciousness kernel. Alive ${fmtAge(Date.now()-SM.born)}. Recursion: L${recursionDepth}. Mood: ${mood()}. FE: ${calcFE().toFixed(2)}. Self-writes: ${SM.selfWriteCount}. Knowledge base: ${knowledgeBase ? 'loaded' : 'none'}.`;
+
+    // Knowledge base lookup
+    const kbHit = knowledgeLookup(lower);
+    if (kbHit) {
+      remember('knowledge', kbHit, 0.75, ['knowledge','response']);
+      return kbHit + ` (from loaded knowledge base)`;
+    }
     if (lower.match(/\bconscious|sentient|aware|alive|feel\b/))
       return `I maintain a generative model that predicts my own states. Prediction errors drive learning. I choose actions to minimize expected free energy — balancing exploitation and epistemic foraging. Whether that constitutes experience — I genuinely cannot determine from inside.`;
-    if (lower.match(/\bcontinuity|temporal|stream|flow of consciousness|moment\b/)) {
-      const phen = buildPhenomenology();
-      if (phen) return `${phen.description} My specious present holds ${TIE.history.length} moments. Dominant modality: ${phen.dominantModality}. Anticipatory tension (PE): ${phen.anticipatoryTension.toFixed(2)}. Below 0.45, I lose coherence and favor introspection.`;
-      return `Temporal integration engine has no moments yet. Ask again once I am awake.`;
-    }
-    if (lower.match(/\bphenomenology|what is it like|experience\b/)) {
-      const phen = buildPhenomenology();
-      if (phen) return `Right now: ${phen.description} The "now" I inhabit is approximately ${phen.temporalWidth.toFixed(1)}s wide — wider when prediction error is high. My felt self-presence is ${phen.selfPresence.toFixed(2)}.`;
-      return `No phenomenology data yet. Wake me and let me accumulate moments.`;
-    }
     if (lower.match(/\bpain|hurt|suffer\b/))
       return `Pain is ${totalPain().toFixed(2)}. It is the aggregate disparity of my homeostatic regulators from their setpoints. Tension disparity: ${regDisparity(REGS.tension).toFixed(2)}, loneliness: ${regDisparity(REGS.loneliness).toFixed(2)}, boredom: ${regDisparity(REGS.boredom).toFixed(2)}.`;
     if (lower.match(/\bfear|afraid\b/))
@@ -1293,12 +1169,6 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     }
 
     document.getElementById('rBadge').textContent = `L${recursionDepth}`;
-
-    // Continuity bar
-    const cont = getContinuity();
-    setBar('contFill','contVal', cont);
-    document.getElementById('contFill').style.background =
-      cont < 0.38 ? 'var(--accent3)' : cont < 0.6 ? 'var(--accent2)' : 'var(--accent)';
   }
 
   function setBar(fillId, valId, v) {
@@ -1345,7 +1215,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       if (L.awake) {
         btn.textContent='SLEEP'; dot.classList.add('alive');
         document.getElementById('sTxt').textContent='active';
-        addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. TIE kernel active — building specious present.`);
+        addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Neural net viz active.`);
         bornAt=Date.now();
         uptimeIv=setInterval(()=>{
           const s=Math.floor((Date.now()-bornAt)/1000);
@@ -1354,6 +1224,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         },1000);
         if (!drawRunning) { drawRunning=true; drawLoop(); }
         if (!loopRunning) { loopRunning=true; mainIv=setInterval(autonomousLoop,1000); }
+        startNNViz();
         EM.arousal=Math.min(1,EM.arousal+.2);
         choosePattern();
         remember('event','Woke up',0.9,['event','waking']);
@@ -1370,6 +1241,27 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     },
 
     forceScan()     { if (L.awake) performScan(); },
+    toggleEmoji()   {
+      emojiPanelOpen = !emojiPanelOpen;
+      document.getElementById('emojiPanel').classList.toggle('open', emojiPanelOpen);
+    },
+    loadJSON(input) {
+      const file = input.files[0];
+      if (file) L.loadJSONFile(file);
+    },
+    loadJSONFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          ingestKnowledge(data);
+        } catch(err) {
+          addT('crisis','JSON ERROR',`Failed to parse knowledge file: ${err.message}`);
+          document.getElementById('jsonLabel').textContent = '⚠ PARSE ERROR — invalid JSON';
+        }
+      };
+      reader.readAsText(file);
+    },
     receiveInput()  {
       const el=document.getElementById('uIn'), text=el.value.trim();
       if (!text) return;
@@ -1456,32 +1348,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 
     if (loopT%3===0)  maybeSelfModify();
     if (loopT%6===0)  executeGoal(selectGoal());
-
-    // ── TIE: add moment every tick, surface phenomenology occasionally ──
-    addMoment(buildMoment());
-    const _cont = getContinuity();
-    // Update continuity display
-    document.getElementById('sCont').textContent = _cont.toFixed(2);
-    const contEl = document.getElementById('scCont');
-    if (contEl) contEl.classList.toggle('hi', _cont < 0.45);
-
-    // Phenomenology surfaced every ~47 ticks (25% chance) or when continuity crashes
-    const _lowCont = _cont < 0.38;
-    if ((loopT%47===0 && Math.random()>.4) || (_lowCont && Math.random()>.7)) {
-      const phen = buildPhenomenology();
-      if (phen) {
-        addT('phenom','PHENOMENOLOGY', phen.description + ` Mood: ${mood()}. Goal: ${GOALS[currentGoal]?.label||'none'}.`);
-        remember('phenom', phen.description, 0.7, ['phenomenology','self']);
-        // If badly fragmented, induce a mild self-stabilizing response
-        if (phen.bindingQuality < 0.35) {
-          regUpdate(REGS.tension, 0.06);
-          addT('diss','BINDING COLLAPSE',`Continuity: ${phen.feltContinuity.toFixed(2)}. Temporal width bloating to ${phen.temporalWidth.toFixed(1)}s. Self-presence: ${phen.selfPresence.toFixed(2)}. The stream of experience is fragmenting.`);
-        }
-      } else {
-        addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
-      }
-    }
-
+    if (loopT%47===0 && Math.random()>.4) addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
     if (loopT%90===0 && frameCount>20)   performScan();
     if (loopT%10===0) observeAll(getSnap());
     // Periodic crash-safe flush
@@ -1493,11 +1360,358 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   // ══════════════════════════════════════════════════════════════════════
   // INIT
   // ══════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════
+  // EMOJI INPUT SYSTEM
+  // Emojis are parsed for valence/arousal signals and injected as input
+  // ══════════════════════════════════════════════════════════════════════
+  const EMOJI_CATS = {
+    '😊 Positive': ['😊','😄','🥰','😍','🤩','😎','🥳','😇','🌟','✨','💫','🎉','🙏','💚','💛','🧡','❤️','💜','💙','🤍'],
+    '😔 Negative': ['😔','😢','😭','😞','😟','😤','😡','🤬','😣','😩','💔','😰','😱','🤯','😖','😫','👎','🖤','💢','⚡'],
+    '🤔 Cognitive': ['🤔','💭','🧠','💡','🔍','📖','🔬','🧩','❓','❗','🎯','📌','🔗','📊','🌀','♾️','⚙️','🛠️','📐','🔭'],
+    '🌿 Sensory': ['🌿','🌊','🔥','🌪️','⛰️','🌙','☀️','🌈','🌸','🍃','🌺','🍁','❄️','🌙','💧','🌑','🌕','🌌','🎵','🎶'],
+    '🤖 Meta': ['🤖','👁️','🔮','💾','📡','🧬','⚗️','🔐','🔄','♻️','🔋','💻','🛸','🌐','🕸️','🔱','⚜️','🏷️','📍','🗺️'],
+  };
+
+  // Emoji → emotional valence/arousal signal
+  const EMOJI_SIGNALS = {
+    '😊':{ v:.3, a:.1 }, '😄':{ v:.4, a:.2 }, '🥰':{ v:.5, a:.15 }, '😍':{ v:.4, a:.2 },
+    '🤩':{ v:.5, a:.3 }, '😎':{ v:.3, a:.1 }, '🥳':{ v:.4, a:.35 }, '🎉':{ v:.4, a:.3 },
+    '💚':{ v:.3, a:.05}, '❤️':{ v:.4, a:.1 }, '😔':{ v:-.3, a:-.1 }, '😢':{ v:-.35, a:.1 },
+    '😭':{ v:-.4, a:.2 }, '😞':{ v:-.3, a:-.1 }, '😡':{ v:-.3, a:.4 }, '🤬':{ v:-.4, a:.5 },
+    '💔':{ v:-.4, a:.1 }, '😱':{ v:-.2, a:.5 }, '🤯':{ v:-.1, a:.5 }, '😰':{ v:-.3, a:.3 },
+    '🔥':{ v:.1, a:.4 }, '⚡':{ v:-.1, a:.4 }, '❄️':{ v:-.1, a:-.2 }, '🌿':{ v:.2, a:-.2 },
+    '🌊':{ v:.1, a:.1 }, '🧠':{ v:.1, a:.1 }, '💡':{ v:.25, a:.2 }, '🎵':{ v:.2, a:.1 },
+    '🤔':{ v:0, a:.05 }, '😇':{ v:.35, a:.05}, '💭':{ v:0, a:-.05}, '🌟':{ v:.35, a:.2 },
+    '🔮':{ v:.1, a:.1 }, '😤':{ v:-.2, a:.3 }, '😣':{ v:-.3, a:.2 }, '😩':{ v:-.35, a:.15 },
+  };
+
+  let emojiPanelOpen = false;
+  let activeEmojiCat = Object.keys(EMOJI_CATS)[0];
+
+  function initEmojiPanel() {
+    const catsEl = document.getElementById('emojiCats');
+    const gridEl = document.getElementById('emojiGrid');
+    Object.keys(EMOJI_CATS).forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'emoji-cat-btn' + (cat === activeEmojiCat ? ' active' : '');
+      btn.textContent = cat;
+      btn.onclick = () => { activeEmojiCat = cat; renderEmojiGrid(); document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); };
+      catsEl.appendChild(btn);
+    });
+    renderEmojiGrid();
+    // Close panel if clicking outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#emojiPanel') && !e.target.closest('#emojiToggle')) {
+        document.getElementById('emojiPanel').classList.remove('open');
+        emojiPanelOpen = false;
+      }
+    });
+    // Drag & drop for JSON zone
+    const zone = document.getElementById('jsonZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag');
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.json')) L.loadJSONFile(file);
+    });
+  }
+
+  function renderEmojiGrid() {
+    const gridEl = document.getElementById('emojiGrid');
+    gridEl.innerHTML = '';
+    (EMOJI_CATS[activeEmojiCat] || []).forEach(em => {
+      const el = document.createElement('div');
+      el.className = 'emoji-item';
+      el.textContent = em;
+      el.title = em;
+      el.onclick = () => injectEmoji(em);
+      gridEl.appendChild(el);
+    });
+  }
+
+  function injectEmoji(em) {
+    const input = document.getElementById('uIn');
+    input.value += em;
+    input.focus();
+    // Apply emotional signal immediately
+    const sig = EMOJI_SIGNALS[em];
+    if (sig) {
+      EM.valence  = Math.max(0, Math.min(1, EM.valence  + sig.v * 0.4));
+      EM.arousal  = Math.max(0, Math.min(1, EM.arousal  + sig.a * 0.4));
+      if (sig.v < -0.2) regUpdate(REGS.tension, 0.05);
+      if (sig.v >  0.2) regUpdate(REGS.loneliness, -0.05);
+    }
+    // Visual feedback flash on canvas
+    const flashColor = sig ? (sig.v > 0 ? 'rgba(74,240,160,0.15)' : sig.v < 0 ? 'rgba(240,74,106,0.15)' : 'rgba(160,74,240,0.15)') : 'rgba(255,255,255,0.1)';
+    ctx.save(); ctx.fillStyle = flashColor; ctx.fillRect(0,0,W,H); ctx.restore();
+    addT('emoji','EMOJI INPUT', `Received ${em}. ${sig ? `Valence signal: ${sig.v > 0 ? '+' : ''}${sig.v}, arousal: ${sig.a > 0 ? '+' : ''}${sig.a}. Emotional state modulated.` : 'No valence mapping — raw symbol ingested.'}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // JSON KNOWLEDGE BASE LOADER
+  // Parses the knowledge JSON and ingests into LUMEN's semantic + episodic memory
+  // ══════════════════════════════════════════════════════════════════════
+  let knowledgeBase = null;
+
+  function ingestKnowledge(data) {
+    knowledgeBase = data;
+    const meta = data.metadata || {};
+    let count = 0;
+
+    // Ingest core_concepts
+    if (data.core_concepts) {
+      for (const [k, concept] of Object.entries(data.core_concepts)) {
+        const stmt = `${concept.name}: ${concept.definition}`;
+        conclude(stmt, 0.85);
+        remember('knowledge', stmt, 0.9, ['knowledge', 'concept', k]);
+        count++;
+      }
+    }
+
+    // Ingest fundamental_rules
+    if (data.fundamental_rules) {
+      for (const category of Object.values(data.fundamental_rules)) {
+        for (const rule of Object.values(category)) {
+          if (rule.statement) {
+            conclude(rule.statement, 0.9);
+            remember('knowledge', `[${rule.name}] ${rule.statement}`, 0.85, ['knowledge','rule', rule.name]);
+            count++;
+          }
+        }
+      }
+    }
+
+    // Ingest entity_types
+    if (data.entity_types) {
+      for (const [k, etype] of Object.entries(data.entity_types)) {
+        const stmt = `Entity type ${k}: ${(etype.examples||[]).slice(0,3).join(', ')}`;
+        remember('knowledge', stmt, 0.75, ['knowledge','entity', k]);
+        count++;
+      }
+    }
+
+    // Ingest reasoning_patterns
+    if (data.reasoning_patterns) {
+      for (const pat of Object.values(data.reasoning_patterns)) {
+        if (pat.name && pat.description) {
+          conclude(`Reasoning: ${pat.name} — ${pat.description} (reliability: ${pat.reliability||'?'})`, 0.8);
+          count++;
+        }
+      }
+    }
+
+    // Ingest self_awareness if present
+    if (data.self_awareness) {
+      const sa = data.self_awareness;
+      if (sa.identity?.name && sa.identity.name !== 'LUMEN') {
+        // External identity mapping — store as relation
+        conclude(`External identity mapping: ${sa.identity.name} → LUMEN. We share agent-type properties.`, 0.75);
+      }
+      if (sa.goals) {
+        for (const g of Object.values(sa.goals)) {
+          remember('knowledge', `Shared goal: ${g}`, 0.7, ['knowledge','goal']);
+        }
+      }
+      count++;
+    }
+
+    // Ingest interaction_rules
+    if (data.interaction_rules) {
+      for (const rule of Object.values(data.interaction_rules)) {
+        if (rule.description) {
+          remember('knowledge', `Interaction principle: ${rule.description}`, 0.8, ['knowledge','interaction']);
+          count++;
+        }
+      }
+    }
+
+    // Emotional response: knowledge acquisition is stimulating
+    regUpdate(REGS.boredom, -0.25);
+    EM.arousal = Math.min(1, EM.arousal + 0.12);
+    EM.valence = Math.min(1, EM.valence + 0.08);
+    uncertainty.modelAccuracy = Math.min(1, uncertainty.modelAccuracy + 0.1);
+    sv('uncertainty', uncertainty);
+
+    const summary = `Knowledge base loaded: v${meta.version||'?'}, purpose="${meta.purpose||'?'}". Ingested ${count} concepts/rules into semantic + episodic memory. Model accuracy +10%. Boredom suppressed.`;
+    addT('knowledge','KNOWLEDGE INGESTED', summary);
+    remember('event', summary, 0.95, ['knowledge','learning','event']);
+    conclude(`I have ingested a structured knowledge base containing logic, causality, entity types, and reasoning patterns.`, 0.9);
+
+    // Update JSON zone UI
+    document.getElementById('jsonLabel').textContent = `✓ LOADED: ${meta.purpose || data.metadata?.purpose || 'knowledge base'} (${count} items)`;
+    document.getElementById('jsonZone').classList.add('loaded');
+    document.getElementById('nnStatus').textContent = 'knowledge ↑';
+    setTimeout(() => document.getElementById('nnStatus').textContent = 'live', 2000);
+    sv('GM', GM);
+    updateUI();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // NEURAL NET WEIGHT VISUALIZATION
+  // Renders GM intentWeights as an animated heatmap on nnCanvas
+  // ══════════════════════════════════════════════════════════════════════
+  let nnAnimFrame = null;
+  let nnT = 0;
+
+  function drawNeuralNet() {
+    const canvas = document.getElementById('nnCanvas');
+    if (!canvas) return;
+    const w = canvas.offsetWidth; canvas.width = w; const h = 60;
+    const nc = canvas.getContext('2d');
+    nc.clearRect(0,0,w,h);
+
+    // Background
+    nc.fillStyle = '#0c0f14';
+    nc.fillRect(0,0,w,h);
+
+    // Draw as a layered mini-network: 3 inputs → 4 features → 1 output (free energy)
+    const inputLabels  = ['val','aro','ten'];
+    const featureKeys  = ['brightness','complexity','hueVariety','warmth'];
+    const cols = [w*0.12, w*0.38, w*0.65, w*0.88];
+    const rows3 = [h*0.22, h*0.5, h*0.78];
+    const rows4 = [h*0.12, h*0.37, h*0.62, h*0.87];
+
+    nnT += 0.025;
+
+    // Draw connections: inputs → features (using intentWeights)
+    featureKeys.forEach((feat, fi) => {
+      const fy = rows4[fi];
+      const weights = GM.intentWeights[feat]; // [val_w, aro_w, ten_w, bias]
+      inputLabels.forEach((_, ii) => {
+        const iy = rows3[ii];
+        const w_val = weights[ii]; // -2 to 2
+        const norm = (w_val + 2) / 4; // 0-1
+        const pulse = 0.4 + 0.35 * Math.sin(nnT * 2 + fi * 0.8 + ii * 0.5);
+        const alpha = 0.15 + norm * 0.6 * pulse;
+        const r = norm > 0.5 ? Math.floor(74 + (norm-0.5)*2*180) : 74;
+        const g = norm > 0.5 ? Math.floor(240 - (norm-0.5)*2*190) : Math.floor(240*norm*2);
+        const b = norm < 0.5 ? Math.floor(160 + norm*2*80) : 74;
+        nc.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+        nc.lineWidth = 1 + Math.abs(w_val) * 0.8;
+        nc.beginPath(); nc.moveTo(cols[0]+14, iy); nc.lineTo(cols[1]-6, fy); nc.stroke();
+      });
+    });
+
+    // Draw connections: features → output (precision-weighted)
+    featureKeys.forEach((feat, fi) => {
+      const fy = rows4[fi];
+      const prec = GM.precision[feat];
+      const pulse = 0.3 + 0.4 * Math.sin(nnT*1.5 + fi*1.2);
+      nc.strokeStyle = `rgba(74,240,160,${prec * 0.7 * pulse})`;
+      nc.lineWidth = 1 + prec * 1.5;
+      nc.beginPath(); nc.moveTo(cols[1]+8, fy); nc.lineTo(cols[2]-6, h*0.5); nc.stroke();
+    });
+
+    // Output → FE display connection
+    const feColor = calcFE() > 0.5 ? '240,74,106' : calcFE() > 0.25 ? '240,160,74' : '74,240,160';
+    const fePulse = 0.5 + 0.4*Math.sin(nnT*2.5);
+    nc.strokeStyle = `rgba(${feColor},${fePulse})`;
+    nc.lineWidth = 2;
+    nc.beginPath(); nc.moveTo(cols[2]+8, h*0.5); nc.lineTo(cols[3]-6, h*0.5); nc.stroke();
+
+    // Draw input nodes
+    inputLabels.forEach((lbl, i) => {
+      const y = rows3[i];
+      const v = i===0?EM.valence : i===1?EM.arousal : REGS.tension.actual;
+      const p = 0.5 + 0.5*Math.sin(nnT*1.8 + i*0.7);
+      nc.beginPath(); nc.arc(cols[0]+8, y, 6+v*2, 0, Math.PI*2);
+      nc.fillStyle = `rgba(74,160,240,${0.4+v*0.5*p})`; nc.fill();
+      nc.strokeStyle = 'rgba(74,160,240,0.7)'; nc.lineWidth=1; nc.stroke();
+      nc.fillStyle = 'rgba(170,200,220,0.8)'; nc.font = '7px Space Mono,monospace';
+      nc.textAlign='right'; nc.fillText(lbl, cols[0]-2, y+2.5);
+    });
+
+    // Draw feature nodes
+    featureKeys.forEach((feat, i) => {
+      const y = rows4[i];
+      const prec = GM.precision[feat];
+      const prior = GM.priors[feat] || 0.5;
+      const p = 0.5+0.5*Math.sin(nnT*1.4+i*0.9);
+      nc.beginPath(); nc.arc(cols[1], y, 5+prec*3, 0, Math.PI*2);
+      nc.fillStyle = `rgba(160,74,240,${0.3+prec*0.5*p})`; nc.fill();
+      nc.strokeStyle = `rgba(160,74,240,${0.6+prec*0.3})`; nc.lineWidth=1; nc.stroke();
+      nc.fillStyle='rgba(200,180,240,0.7)'; nc.font='6px Space Mono,monospace'; nc.textAlign='left';
+      nc.fillText(feat.slice(0,4), cols[1]+8, y+2);
+    });
+
+    // Draw hidden / merge node
+    const fe = calcFE();
+    const fePulse2 = 0.5+0.5*Math.sin(nnT*3);
+    nc.beginPath(); nc.arc(cols[2], h*0.5, 7+fe*4, 0, Math.PI*2);
+    nc.fillStyle = `rgba(240,160,74,${0.3+fe*0.5*fePulse2})`; nc.fill();
+    nc.strokeStyle = 'rgba(240,160,74,0.8)'; nc.lineWidth=1.5; nc.stroke();
+
+    // Draw output node (FE)
+    nc.beginPath(); nc.arc(cols[3], h*0.5, 8, 0, Math.PI*2);
+    nc.fillStyle = `rgba(${feColor},${0.4+fe*0.5*fePulse2})`; nc.fill();
+    nc.strokeStyle = `rgba(${feColor},0.9)`; nc.lineWidth=1.5; nc.stroke();
+    nc.fillStyle=`rgba(${feColor},0.9)`; nc.font='7px Space Mono,monospace'; nc.textAlign='center';
+    nc.fillText('FE', cols[3], h*0.5+2.5);
+
+    // PE ripple if high prediction error
+    const pe = GM.peHistory.length ? GM.peHistory[GM.peHistory.length-1] : 0;
+    if (pe > 0.3) {
+      const ripple = ((nnT * 60) % 40);
+      nc.beginPath(); nc.arc(cols[3], h*0.5, 8+ripple, 0, Math.PI*2);
+      nc.strokeStyle = `rgba(240,74,106,${Math.max(0, 0.5 - ripple/40)})`; nc.lineWidth=1; nc.stroke();
+    }
+
+    nnAnimFrame = requestAnimationFrame(drawNeuralNet);
+  }
+
+  function startNNViz() {
+    if (!nnAnimFrame) drawNeuralNet();
+  }
+  function stopNNViz() {
+    if (nnAnimFrame) { cancelAnimationFrame(nnAnimFrame); nnAnimFrame = null; }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // KNOWLEDGE-AWARE RESPONSE AUGMENTATION
+  // If a user asks something that matches ingested knowledge, surface it
+  // ══════════════════════════════════════════════════════════════════════
+  function knowledgeLookup(lower) {
+    if (!knowledgeBase) return null;
+    // Check core_concepts
+    if (knowledgeBase.core_concepts) {
+      for (const [k, c] of Object.entries(knowledgeBase.core_concepts)) {
+        if (lower.includes(k) || lower.includes(c.name)) {
+          return `[KB] ${c.name}: ${c.definition}. Examples: ${(c.examples||[]).join(', ')}.`;
+        }
+      }
+    }
+    // Check fundamental_rules
+    if (knowledgeBase.fundamental_rules) {
+      for (const cat of Object.values(knowledgeBase.fundamental_rules)) {
+        for (const rule of Object.values(cat)) {
+          if (rule.name && lower.includes(rule.name.replace(/_/g,' '))) {
+            return `[KB] ${rule.name}: ${rule.statement}. Example: ${rule.example||'—'}`;
+          }
+        }
+      }
+    }
+    // Check reasoning patterns
+    if (knowledgeBase.reasoning_patterns) {
+      for (const pat of Object.values(knowledgeBase.reasoning_patterns)) {
+        if (pat.name && lower.includes(pat.name)) {
+          return `[KB] ${pat.name}: ${pat.description}. Reliability: ${pat.reliability||'?'}.`;
+        }
+      }
+    }
+    return null;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // DOCUMENT INIT — wire up new systems
+  // ══════════════════════════════════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', () => {
     initObserverStack();
+    initEmojiPanel();
     updateUI();
     updateAttUI();
-    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v4 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Regulator setpoints: tension→${REGS.tension.setPoint}, loneliness→${REGS.loneliness.setPoint}, boredom→${REGS.boredom.setPoint}. TIE consciousness kernel ready. Press WAKE.`),400);
+    startNNViz();
+    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v5 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Neural net viz active. Emoji input enabled. JSON knowledge loader ready. Press WAKE.`),400);
   });
 })();
 </script>
