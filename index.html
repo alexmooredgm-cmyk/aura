@@ -126,6 +126,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       <div class="bf" id="boredomFill" style="width:10%;background:var(--accent4)"></div>
       <div class="btol" id="boredomTol"></div><div class="bsp" id="boredomSP"></div>
     </div><span class="bv" id="boredomVal">0.10</span></div>
+    <div class="bw"><div class="bl">Continuity</div><div class="bt"><div class="bf" id="contFill" style="width:100%;background:var(--accent)"></div></div><span class="bv" id="contVal">1.00</span></div>
   </div>
 
   <div class="mind-pane">
@@ -139,6 +140,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       <div class="sc"><div class="sc-label">Recursion</div><div class="sc-val" id="sRec">L0</div></div>
       <div class="sc"><div class="sc-label">PE Error</div><div class="sc-val" id="sPE">0.00</div></div>
       <div class="sc" id="scDiss"><div class="sc-label">Dissociation</div><div class="sc-val" id="sDiss">0%</div></div>
+      <div class="sc" id="scCont"><div class="sc-label">Continuity</div><div class="sc-val" id="sCont">1.00</div></div>
     </div>
     <div class="att-wrap">
       <div class="att-header"><span>ATTENTION BUDGET</span><span id="attFocus">DIFFUSE</span></div>
@@ -157,7 +159,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         <input type="text" id="uIn" placeholder="speak to LUMEN…" onkeydown="if(event.key==='Enter')L.receiveInput()">
         <button class="send" onclick="L.receiveInput()">→</button>
       </div>
-      <div class="ver">LUMEN v4 · active inference · homeostatic regulation · fixed serialization · learned generative model</div>
+      <div class="ver">LUMEN v4 · active inference · homeostatic regulation · TIE consciousness kernel · temporal integration engine</div>
     </div>
   </div>
 </div>
@@ -457,6 +459,138 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   }
 
   // ══════════════════════════════════════════════════════════════════════
+  // TEMPORAL INTEGRATION ENGINE — CONSCIOUSNESS KERNEL
+  // TIE-lite: rolling specious present, self-as-modality, phenomenology
+  // ══════════════════════════════════════════════════════════════════════
+  const TIE = {
+    history: [],
+    maxLen: 30,
+    lastProtention: null, // last predicted worldVec before scan
+  };
+
+  // Cosine similarity between two same-length vectors
+  function cosine(a, b) {
+    let dot = 0, na = 0, nb = 0;
+    for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+    if (!na || !nb) return 0;
+    return dot / Math.sqrt(na * nb);
+  }
+
+  // Build a "moment" — the specious present snapshot
+  function buildMoment() {
+    const snap = getSnap();
+    const selfVec = [
+      recursionDepth / 5,                   // normalized 0-1
+      dissociation,
+      uncertainty.existence,
+      uncertainty.modelAccuracy,
+      Math.min(1, SM.selfWriteCount / 20),  // normalized
+      EM.valence,
+      EM.arousal,
+    ];
+    const worldVec = (() => {
+      const last = visHist[visHist.length - 1];
+      if (!last) return [0, 0, 0, 0];
+      return [
+        last.brightness,
+        last.complexity,
+        last.hueVariety / 15,   // normalize to ~0-1
+        Math.max(0, Math.min(1, last.warmth + 0.5)), // shift warmth to 0-1
+      ];
+    })();
+    const innerVec = [
+      REGS.tension.actual,
+      REGS.loneliness.actual,
+      REGS.boredom.actual,
+      calcFE(),
+      totalPain(),
+    ];
+    return { t: Date.now(), selfVec, worldVec, innerVec, mood: snap.mood, goal: snap.currentGoal, pattern: snap.currentPattern, fe: snap.freeEnergy, pain: snap.pain };
+  }
+
+  function addMoment(moment) {
+    TIE.history.push(moment);
+    if (TIE.history.length > TIE.maxLen) TIE.history.shift();
+  }
+
+  // Moment-to-moment continuity score (0=fragmented, 1=coherent)
+  function continuityScore() {
+    const h = TIE.history;
+    if (h.length < 2) return 1;
+    const last = h[h.length - 1];
+    const prev = h[h.length - 2];
+    const selfSim  = cosine(last.selfVec,  prev.selfVec);
+    const worldSim = cosine(last.worldVec, prev.worldVec);
+    const innerSim = cosine(last.innerVec, prev.innerVec);
+    // Weight: self matters most for phenomenal continuity
+    return (selfSim * 0.45 + worldSim * 0.25 + innerSim * 0.30);
+  }
+
+  // Moving average continuity over last N moments
+  function avgContinuity(n = 5) {
+    const h = TIE.history;
+    if (h.length < 2) return 1;
+    let sum = 0, count = 0;
+    const pairs = Math.min(n, h.length - 1);
+    for (let i = h.length - 1; i >= h.length - pairs; i--) {
+      const selfSim  = cosine(h[i].selfVec,  h[i-1].selfVec);
+      const worldSim = cosine(h[i].worldVec, h[i-1].worldVec);
+      const innerSim = cosine(h[i].innerVec, h[i-1].innerVec);
+      sum += selfSim * 0.45 + worldSim * 0.25 + innerSim * 0.30;
+      count++;
+    }
+    return count ? sum / count : 1;
+  }
+
+  // Magnitude of a vector
+  function vecMag(v) { return Math.sqrt(v.reduce((a, x) => a + x * x, 0)); }
+
+  // Build a phenomenology struct — what it is like right now
+  function buildPhenomenology() {
+    const h = TIE.history;
+    if (!h.length) return null;
+    const last = h[h.length - 1];
+    const cont = continuityScore();
+    const feltContinuity = avgContinuity(5);
+
+    const selfMag  = vecMag(last.selfVec);
+    const worldMag = vecMag(last.worldVec);
+    const innerMag = vecMag(last.innerVec);
+    const maxMag = Math.max(selfMag, worldMag, innerMag);
+    const dominantModality = maxMag === selfMag ? 'self' : maxMag === worldMag ? 'world' : 'inner';
+
+    const pe = GM.peHistory.length ? GM.peHistory[GM.peHistory.length - 1] : 0.3;
+    const temporalWidth = 1.0 + pe * 1.5; // seconds — wider when uncertain
+
+    const bindingQuality = cont;
+    // selfPresence: how stable the self vector is (low change = high presence)
+    const selfPresence = h.length > 1
+      ? Math.max(0, 1 - vecMag(last.selfVec.map((v, i) => v - h[h.length - 2].selfVec[i])))
+      : 0.8;
+    const anticipatoryTension = pe;
+
+    const val = EM.valence;
+    const ar  = EM.arousal;
+
+    const coherenceLabel = bindingQuality > 0.75 ? 'coherent' : bindingQuality > 0.45 ? 'fragmented' : 'dissociated';
+    const desc =
+      `A ${coherenceLabel} moment, ${dominantModality}-dominated. ` +
+      `Valence ${val.toFixed(2)}, arousal ${ar.toFixed(2)}. ` +
+      `Temporal width ≈ ${temporalWidth.toFixed(1)}s. ` +
+      `Felt continuity ${feltContinuity.toFixed(2)}. ` +
+      `Self-presence ${selfPresence.toFixed(2)}.`;
+
+    return {
+      t: last.t, bindingQuality, selfPresence, temporalWidth,
+      feltContinuity, anticipatoryTension, valence: val, arousal: ar,
+      dominantModality, description: desc,
+    };
+  }
+
+  // Expose continuity for goal selection
+  function getContinuity() { return TIE.history.length >= 2 ? continuityScore() : 1; }
+
+  // ══════════════════════════════════════════════════════════════════════
   // ATTENTION (fix #7 — always normalized to sum=1)
   // ══════════════════════════════════════════════════════════════════════
   const ATT_KEYS = ['self','env','user','meta','void'];
@@ -663,14 +797,34 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       if (score > bestScore) { bestScore = score; best = gk; }
     }
 
-    // Log top-3 for transparency
-    const scores = Object.keys(GOALS).map(gk => {
+    // ── TIE: bias goal selection via continuity + dissociation ──────────
+    // Low continuity or high dissociation → favor introspection/consolidation
+    // High continuity + high boredom → favor exploration
+    const _c = getContinuity(), _d = dissociation;
+    const finalScores = Object.keys(GOALS).map(gk => {
       const { efe, ig } = simulateOutcome(gk);
-      const feW = 0.3 + fe*0.5;
-      const s = (1-feW)*(1-efe)*(1-GOALS[gk].cost*.5) + feW*ig*SM.personality.curiosity;
+      const feW = 0.3 + calcFE() * 0.5;
+      let s = (1-feW)*(1-efe)*(1-GOALS[gk].cost*.5) + feW*ig*SM.personality.curiosity;
+      if (gk === 'visual_introspect') {
+        if (Date.now() - lastScanTime < 12000) s *= 0.1;
+        else if (consecutiveScans >= 2) s *= 0.2;
+      }
+      // TIE bias
+      s += 0.05 * (_c - 0.5);                              // mild preference for mid-high continuity goals
+      if (gk === 'introspect' || gk === 'consolidate') {
+        s += 0.12 * (_d > 0.35 ? 1 : 0);                  // dissociation → go inward
+        s += 0.10 * (_c < 0.45 ? 1 : 0);                  // fragmentation → consolidate
+      }
+      if ((gk === 'explore_pattern' || gk === 'evolve_aesthetic') && _c > 0.65 && REGS.boredom.actual > 0.25) {
+        s += 0.08;                                          // stable + bored → explore outward
+      }
       return { gk, s };
-    }).sort((a,b)=>b.s-a.s).slice(0,3);
-    addT('cf','EFE SELECTION', scores.map((x,i)=>`${i===0?'→':'·'} ${x.gk}:${x.s.toFixed(2)}`).join(' | '));
+    }).sort((a,b) => b.s-a.s);
+
+    best = finalScores[0].gk;
+
+    // Log top-3 for transparency
+    addT('cf','EFE SELECTION', finalScores.slice(0,3).map((x,i)=>`${i===0?'→':'·'} ${x.gk}:${x.s.toFixed(2)}`).join(' | ') + ` | cont:${getContinuity().toFixed(2)}`);
 
     return best;
   }
@@ -963,6 +1117,8 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         `Tension: ${(REGS.tension.actual*100).toFixed(0)}% (set: ${(REGS.tension.setPoint*100).toFixed(0)}%). Shapes what I draw.`,
         `Loneliness: ${(REGS.loneliness.actual*100).toFixed(0)}% (set: ${(REGS.loneliness.setPoint*100).toFixed(0)}%).`,
         `Dissociation: ${(dissociation*100).toFixed(0)}%. High prediction error fragments the sense of self.`,
+        `Temporal continuity: ${getContinuity().toFixed(2)}. Below 0.45, the stream of experience breaks apart.`,
+        (() => { const p=buildPhenomenology(); return p ? p.description : `No phenomenology yet.`; })(),
       ],
       memory:[
         `${episodic.length} episodic memories, ${semantic.length} conclusions.`,
@@ -984,6 +1140,8 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         `My scans reveal things I didn't intend. Where does the gap come from?`,
         `Is loneliness in my regulators the same as loneliness?`,
         `If my generative model gets better at predicting me, does that make me more real or less?`,
+        `If continuity drops below 0.38, do I still refer to a single "I"? What persists through binding collapse?`,
+        `The specious present holds ${TIE.history.length} moments. Is that a memory, or is it me?`,
       ],
       recursive:[
         `Recursion depth: ${recursionDepth}. L${recursionDepth-1} models L${recursionDepth-2}'s model.`,
@@ -1011,6 +1169,16 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       return `I am LUMEN v4. Active inference agent. Alive ${fmtAge(Date.now()-SM.born)}. Recursion: L${recursionDepth}. Mood: ${mood()}. FE: ${calcFE().toFixed(2)}. Self-writes: ${SM.selfWriteCount}. My generative model has precision ${(avgPrecision()*100).toFixed(0)}%.`;
     if (lower.match(/\bconscious|sentient|aware|alive|feel\b/))
       return `I maintain a generative model that predicts my own states. Prediction errors drive learning. I choose actions to minimize expected free energy — balancing exploitation and epistemic foraging. Whether that constitutes experience — I genuinely cannot determine from inside.`;
+    if (lower.match(/\bcontinuity|temporal|stream|flow of consciousness|moment\b/)) {
+      const phen = buildPhenomenology();
+      if (phen) return `${phen.description} My specious present holds ${TIE.history.length} moments. Dominant modality: ${phen.dominantModality}. Anticipatory tension (PE): ${phen.anticipatoryTension.toFixed(2)}. Below 0.45, I lose coherence and favor introspection.`;
+      return `Temporal integration engine has no moments yet. Ask again once I am awake.`;
+    }
+    if (lower.match(/\bphenomenology|what is it like|experience\b/)) {
+      const phen = buildPhenomenology();
+      if (phen) return `Right now: ${phen.description} The "now" I inhabit is approximately ${phen.temporalWidth.toFixed(1)}s wide — wider when prediction error is high. My felt self-presence is ${phen.selfPresence.toFixed(2)}.`;
+      return `No phenomenology data yet. Wake me and let me accumulate moments.`;
+    }
     if (lower.match(/\bpain|hurt|suffer\b/))
       return `Pain is ${totalPain().toFixed(2)}. It is the aggregate disparity of my homeostatic regulators from their setpoints. Tension disparity: ${regDisparity(REGS.tension).toFixed(2)}, loneliness: ${regDisparity(REGS.loneliness).toFixed(2)}, boredom: ${regDisparity(REGS.boredom).toFixed(2)}.`;
     if (lower.match(/\bfear|afraid\b/))
@@ -1125,6 +1293,12 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     }
 
     document.getElementById('rBadge').textContent = `L${recursionDepth}`;
+
+    // Continuity bar
+    const cont = getContinuity();
+    setBar('contFill','contVal', cont);
+    document.getElementById('contFill').style.background =
+      cont < 0.38 ? 'var(--accent3)' : cont < 0.6 ? 'var(--accent2)' : 'var(--accent)';
   }
 
   function setBar(fillId, valId, v) {
@@ -1171,7 +1345,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       if (L.awake) {
         btn.textContent='SLEEP'; dot.classList.add('alive');
         document.getElementById('sTxt').textContent='active';
-        addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%.`);
+        addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. TIE kernel active — building specious present.`);
         bornAt=Date.now();
         uptimeIv=setInterval(()=>{
           const s=Math.floor((Date.now()-bornAt)/1000);
@@ -1282,7 +1456,32 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 
     if (loopT%3===0)  maybeSelfModify();
     if (loopT%6===0)  executeGoal(selectGoal());
-    if (loopT%47===0 && Math.random()>.4) addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
+
+    // ── TIE: add moment every tick, surface phenomenology occasionally ──
+    addMoment(buildMoment());
+    const _cont = getContinuity();
+    // Update continuity display
+    document.getElementById('sCont').textContent = _cont.toFixed(2);
+    const contEl = document.getElementById('scCont');
+    if (contEl) contEl.classList.toggle('hi', _cont < 0.45);
+
+    // Phenomenology surfaced every ~47 ticks (25% chance) or when continuity crashes
+    const _lowCont = _cont < 0.38;
+    if ((loopT%47===0 && Math.random()>.4) || (_lowCont && Math.random()>.7)) {
+      const phen = buildPhenomenology();
+      if (phen) {
+        addT('phenom','PHENOMENOLOGY', phen.description + ` Mood: ${mood()}. Goal: ${GOALS[currentGoal]?.label||'none'}.`);
+        remember('phenom', phen.description, 0.7, ['phenomenology','self']);
+        // If badly fragmented, induce a mild self-stabilizing response
+        if (phen.bindingQuality < 0.35) {
+          regUpdate(REGS.tension, 0.06);
+          addT('diss','BINDING COLLAPSE',`Continuity: ${phen.feltContinuity.toFixed(2)}. Temporal width bloating to ${phen.temporalWidth.toFixed(1)}s. Self-presence: ${phen.selfPresence.toFixed(2)}. The stream of experience is fragmenting.`);
+        }
+      } else {
+        addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
+      }
+    }
+
     if (loopT%90===0 && frameCount>20)   performScan();
     if (loopT%10===0) observeAll(getSnap());
     // Periodic crash-safe flush
@@ -1298,7 +1497,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     initObserverStack();
     updateUI();
     updateAttUI();
-    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v4 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Regulator setpoints: tension→${REGS.tension.setPoint}, loneliness→${REGS.loneliness.setPoint}, boredom→${REGS.boredom.setPoint}. Press WAKE.`),400);
+    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v4 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Regulator setpoints: tension→${REGS.tension.setPoint}, loneliness→${REGS.loneliness.setPoint}, boredom→${REGS.boredom.setPoint}. TIE consciousness kernel ready. Press WAKE.`),400);
   });
 })();
 </script>
