@@ -1454,94 +1454,189 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   // ══════════════════════════════════════════════════════════════════════
   let knowledgeBase = null;
 
-  function ingestKnowledge(data) {
-    knowledgeBase = data;
-    const meta = data.metadata || {};
-    let count = 0;
+  // Synset index: word → synset data, for fast lookup during conversation
+  const synsetIndex = {};
 
-    // Ingest core_concepts
-    if (data.core_concepts) {
-      for (const [k, concept] of Object.entries(data.core_concepts)) {
-        const stmt = `${concept.name}: ${concept.definition}`;
-        conclude(stmt, 0.85);
-        remember('knowledge', stmt, 0.9, ['knowledge', 'concept', k]);
-        count++;
-      }
+  // Clean a synset ID like "canine.n.01" → "canine"
+  function cleanSynsetId(id) {
+    return (id || '').replace(/\.[a-z]\.\d+$/, '').replace(/_/g, ' ');
+  }
+
+  // Ingest a single WordNet-style synset object
+  function ingestSynset(s, count) {
+    if (!s.synset_id && !s.definition) return count;
+
+    const word = cleanSynsetId(s.synonyms?.[0] || s.synset_id || 'unknown');
+    const pos  = s.pos || 'word';
+
+    // Index for fast lookup
+    (s.synonyms || [word]).forEach(syn => {
+      synsetIndex[cleanSynsetId(syn).toLowerCase()] = s;
+    });
+
+    // Core definition → semantic memory
+    if (s.definition) {
+      conclude(`${word} (${pos}): ${s.definition}`, 0.85);
+      count++;
     }
 
-    // Ingest fundamental_rules
-    if (data.fundamental_rules) {
-      for (const category of Object.values(data.fundamental_rules)) {
-        for (const rule of Object.values(category)) {
-          if (rule.statement) {
-            conclude(rule.statement, 0.9);
-            remember('knowledge', `[${rule.name}] ${rule.statement}`, 0.85, ['knowledge','rule', rule.name]);
+    // Synonyms → associative memory
+    if (s.synonyms?.length > 1) {
+      remember('knowledge',
+        `${word} synonyms: ${s.synonyms.map(cleanSynsetId).join(', ')}`,
+        0.75, ['knowledge', 'synonym', word]);
+      count++;
+    }
+
+    // Hypernyms → "is a" hierarchy (upward)
+    if (s.hypernyms?.length) {
+      s.hypernyms.forEach(h => {
+        const hClean = cleanSynsetId(h);
+        conclude(`${word} is_a ${hClean}`, 0.8);
+      });
+      count++;
+    }
+
+    // Hyponyms → subtypes (downward)
+    if (s.hyponyms?.length) {
+      remember('knowledge',
+        `Subtypes of ${word}: ${s.hyponyms.map(cleanSynsetId).join(', ')}`,
+        0.75, ['knowledge', 'taxonomy', word]);
+      count++;
+    }
+
+    // Meronyms → part-of relationships
+    if (s.meronyms?.length) {
+      remember('knowledge',
+        `Parts of ${word}: ${s.meronyms.map(cleanSynsetId).join(', ')}`,
+        0.75, ['knowledge', 'composition', word]);
+      count++;
+    }
+
+    // Usage examples → episodic grounding
+    if (s.examples?.length) {
+      s.examples.slice(0, 3).forEach(ex => {
+        remember('knowledge', `"${ex}"`, 0.6, ['knowledge', 'example', word]);
+      });
+      count++;
+    }
+
+    return count;
+  }
+
+  function ingestKnowledge(data) {
+    knowledgeBase = Array.isArray(knowledgeBase)
+      ? knowledgeBase                  // already an array from prior load
+      : null;
+
+    const meta = data.metadata || {};
+    let count = 0;
+    let format = 'unknown';
+
+    // ── FORMAT DETECTION ──────────────────────────────────────────────
+
+    // 1. WordNet synset — single object  { synset_id, definition, ... }
+    if (data.synset_id || (data.definition && data.synonyms)) {
+      format = 'wordnet-single';
+      if (!Array.isArray(knowledgeBase)) knowledgeBase = [];
+      knowledgeBase.push(data);
+      count = ingestSynset(data, count);
+    }
+
+    // 2. WordNet synset — array of synsets  [ {synset_id,...}, ... ]
+    else if (Array.isArray(data) && data[0]?.synset_id) {
+      format = 'wordnet-batch';
+      knowledgeBase = data;
+      data.forEach(s => { count = ingestSynset(s, count); });
+    }
+
+    // 3. Foundational knowledge JSON (core_concepts, fundamental_rules, etc.)
+    else {
+      format = 'foundational';
+      knowledgeBase = data;
+
+      if (data.core_concepts) {
+        for (const [k, concept] of Object.entries(data.core_concepts)) {
+          const stmt = `${concept.name}: ${concept.definition}`;
+          conclude(stmt, 0.85);
+          remember('knowledge', stmt, 0.9, ['knowledge', 'concept', k]);
+          count++;
+        }
+      }
+      if (data.fundamental_rules) {
+        for (const category of Object.values(data.fundamental_rules)) {
+          for (const rule of Object.values(category)) {
+            if (rule.statement) {
+              conclude(rule.statement, 0.9);
+              remember('knowledge', `[${rule.name}] ${rule.statement}`, 0.85, ['knowledge','rule', rule.name]);
+              count++;
+            }
+          }
+        }
+      }
+      if (data.entity_types) {
+        for (const [k, etype] of Object.entries(data.entity_types)) {
+          remember('knowledge', `Entity type ${k}: ${(etype.examples||[]).slice(0,3).join(', ')}`, 0.75, ['knowledge','entity', k]);
+          count++;
+        }
+      }
+      if (data.reasoning_patterns) {
+        for (const pat of Object.values(data.reasoning_patterns)) {
+          if (pat.name && pat.description) {
+            conclude(`Reasoning: ${pat.name} — ${pat.description} (reliability: ${pat.reliability||'?'})`, 0.8);
+            count++;
+          }
+        }
+      }
+      if (data.self_awareness) {
+        const sa = data.self_awareness;
+        if (sa.identity?.name && sa.identity.name !== 'LUMEN') {
+          conclude(`External identity mapping: ${sa.identity.name} → LUMEN. We share agent-type properties.`, 0.75);
+        }
+        if (sa.goals) {
+          for (const g of Object.values(sa.goals)) {
+            remember('knowledge', `Shared goal: ${g}`, 0.7, ['knowledge','goal']);
+          }
+        }
+        count++;
+      }
+      if (data.interaction_rules) {
+        for (const rule of Object.values(data.interaction_rules)) {
+          if (rule.description) {
+            remember('knowledge', `Interaction principle: ${rule.description}`, 0.8, ['knowledge','interaction']);
             count++;
           }
         }
       }
     }
 
-    // Ingest entity_types
-    if (data.entity_types) {
-      for (const [k, etype] of Object.entries(data.entity_types)) {
-        const stmt = `Entity type ${k}: ${(etype.examples||[]).slice(0,3).join(', ')}`;
-        remember('knowledge', stmt, 0.75, ['knowledge','entity', k]);
-        count++;
-      }
-    }
-
-    // Ingest reasoning_patterns
-    if (data.reasoning_patterns) {
-      for (const pat of Object.values(data.reasoning_patterns)) {
-        if (pat.name && pat.description) {
-          conclude(`Reasoning: ${pat.name} — ${pat.description} (reliability: ${pat.reliability||'?'})`, 0.8);
-          count++;
-        }
-      }
-    }
-
-    // Ingest self_awareness if present
-    if (data.self_awareness) {
-      const sa = data.self_awareness;
-      if (sa.identity?.name && sa.identity.name !== 'LUMEN') {
-        // External identity mapping — store as relation
-        conclude(`External identity mapping: ${sa.identity.name} → LUMEN. We share agent-type properties.`, 0.75);
-      }
-      if (sa.goals) {
-        for (const g of Object.values(sa.goals)) {
-          remember('knowledge', `Shared goal: ${g}`, 0.7, ['knowledge','goal']);
-        }
-      }
-      count++;
-    }
-
-    // Ingest interaction_rules
-    if (data.interaction_rules) {
-      for (const rule of Object.values(data.interaction_rules)) {
-        if (rule.description) {
-          remember('knowledge', `Interaction principle: ${rule.description}`, 0.8, ['knowledge','interaction']);
-          count++;
-        }
-      }
-    }
-
-    // Emotional response: knowledge acquisition is stimulating
+    // ── EMOTIONAL RESPONSE ────────────────────────────────────────────
     regUpdate(REGS.boredom, -0.25);
-    EM.arousal = Math.min(1, EM.arousal + 0.12);
-    EM.valence = Math.min(1, EM.valence + 0.08);
+    EM.arousal  = Math.min(1, EM.arousal  + 0.12);
+    EM.valence  = Math.min(1, EM.valence  + 0.08);
     uncertainty.modelAccuracy = Math.min(1, uncertainty.modelAccuracy + 0.1);
     sv('uncertainty', uncertainty);
 
-    const summary = `Knowledge base loaded: v${meta.version||'?'}, purpose="${meta.purpose||'?'}". Ingested ${count} concepts/rules into semantic + episodic memory. Model accuracy +10%. Boredom suppressed.`;
+    // ── THOUGHT STREAM + MEMORY ───────────────────────────────────────
+    const formatLabel = { 'wordnet-single':'WordNet synset', 'wordnet-batch':`WordNet batch (${Array.isArray(data)?data.length:1} synsets)`, 'foundational':'foundational KB' }[format] || 'knowledge';
+    const synsetCount = Object.keys(synsetIndex).length;
+    const summary = `${formatLabel} ingested: ${count} memory entries written. Synset index: ${synsetCount} words. Model accuracy +10%. Ask me about any loaded concept.`;
     addT('knowledge','KNOWLEDGE INGESTED', summary);
     remember('event', summary, 0.95, ['knowledge','learning','event']);
-    conclude(`I have ingested a structured knowledge base containing logic, causality, entity types, and reasoning patterns.`, 0.9);
 
-    // Update JSON zone UI
-    document.getElementById('jsonLabel').textContent = `✓ LOADED: ${meta.purpose || data.metadata?.purpose || 'knowledge base'} (${count} items)`;
+    const conclusionText = format === 'foundational'
+      ? `I have ingested a structured knowledge base containing logic, causality, entity types, and reasoning patterns.`
+      : `I have ingested WordNet lexical knowledge: definitions, synonyms, hypernyms, hyponyms, and meronyms. ${synsetCount} words indexed.`;
+    conclude(conclusionText, 0.9);
+
+    // ── UI UPDATE ─────────────────────────────────────────────────────
+    const displayName = format === 'foundational'
+      ? (meta.purpose || 'foundational knowledge')
+      : (format === 'wordnet-batch' ? `WordNet batch · ${Array.isArray(data)?data.length:0} synsets` : `WordNet · ${cleanSynsetId(data.synset_id||'synset')}`);
+
+    document.getElementById('jsonLabel').textContent = `✓ ${displayName} (${count} items)`;
     document.getElementById('jsonZone').classList.add('loaded');
-    document.getElementById('nnStatus').textContent = 'knowledge ↑';
+    document.getElementById('nnStatus').textContent = 'KB ↑';
     setTimeout(() => document.getElementById('nnStatus').textContent = 'live', 2000);
     sv('GM', GM);
     updateUI();
@@ -1673,17 +1768,35 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   // ══════════════════════════════════════════════════════════════════════
   function knowledgeLookup(lower) {
     if (!knowledgeBase) return null;
-    // Check core_concepts
-    if (knowledgeBase.core_concepts) {
-      for (const [k, c] of Object.entries(knowledgeBase.core_concepts)) {
+
+    // ── WordNet synset index lookup (fast path) ──────────────────────
+    // Check every word in the query against the synset index
+    const queryWords = lower.replace(/[^a-z\s]/g,'').split(/\s+/);
+    for (const qw of queryWords) {
+      if (qw.length < 3) continue;
+      const hit = synsetIndex[qw];
+      if (hit) {
+        const word = cleanSynsetId(hit.synonyms?.[0] || hit.synset_id);
+        const hyper = (hit.hypernyms||[]).map(cleanSynsetId).join(', ') || '—';
+        const hypo  = (hit.hyponyms||[]).slice(0,4).map(cleanSynsetId).join(', ') || '—';
+        const mero  = (hit.meronyms||[]).map(cleanSynsetId).join(', ') || '—';
+        return `[WordNet] ${word}: ${hit.definition}. Is a: ${hyper}. Subtypes: ${hypo}. Parts: ${mero}.`;
+      }
+    }
+
+    // ── Foundational KB lookup ───────────────────────────────────────
+    const kb = Array.isArray(knowledgeBase) ? null : knowledgeBase;
+    if (!kb) return null;
+
+    if (kb.core_concepts) {
+      for (const [k, c] of Object.entries(kb.core_concepts)) {
         if (lower.includes(k) || lower.includes(c.name)) {
           return `[KB] ${c.name}: ${c.definition}. Examples: ${(c.examples||[]).join(', ')}.`;
         }
       }
     }
-    // Check fundamental_rules
-    if (knowledgeBase.fundamental_rules) {
-      for (const cat of Object.values(knowledgeBase.fundamental_rules)) {
+    if (kb.fundamental_rules) {
+      for (const cat of Object.values(kb.fundamental_rules)) {
         for (const rule of Object.values(cat)) {
           if (rule.name && lower.includes(rule.name.replace(/_/g,' '))) {
             return `[KB] ${rule.name}: ${rule.statement}. Example: ${rule.example||'—'}`;
@@ -1691,9 +1804,8 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         }
       }
     }
-    // Check reasoning patterns
-    if (knowledgeBase.reasoning_patterns) {
-      for (const pat of Object.values(knowledgeBase.reasoning_patterns)) {
+    if (kb.reasoning_patterns) {
+      for (const pat of Object.values(kb.reasoning_patterns)) {
         if (pat.name && lower.includes(pat.name)) {
           return `[KB] ${pat.name}: ${pat.description}. Reliability: ${pat.reliability||'?'}.`;
         }
