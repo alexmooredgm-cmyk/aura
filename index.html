@@ -114,6 +114,20 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 .json-zone.loaded{border-color:var(--accent);color:var(--accent);border-style:solid;}
 .json-status{font-size:8px;color:var(--accent4);letter-spacing:1px;}
 
+/* ── SentiWordNet progress bar ── */
+.swn-progress{display:none;flex-direction:column;gap:4px;}
+.swn-progress.active{display:flex;}
+.swn-bar-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.swn-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent4),var(--accent));border-radius:2px;transition:width .1s linear;}
+.swn-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--accent4);display:flex;justify-content:space-between;}
+
+/* ── Live sentiment indicator on input ── */
+.sent-indicator{display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:1px;color:var(--muted);min-height:14px;transition:all .3s;}
+.sent-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s,box-shadow .3s;flex-shrink:0;}
+.sent-dot.pos{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.sent-dot.neg{background:var(--accent3);box-shadow:0 0 6px var(--accent3);}
+.sent-dot.neu{background:var(--accent2);}
+
 .ver{font-size:8px;color:var(--muted);letter-spacing:2px;text-align:center;}
 .gap-ind{position:fixed;bottom:20px;left:20px;font-size:10px;color:var(--accent3);opacity:0;transition:opacity .5s;pointer-events:none;}
 .gap-ind.vis{opacity:1;}
@@ -190,11 +204,19 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         <input type="text" id="uIn" placeholder="speak to LUMEN… or pick an emoji" onkeydown="if(event.key==='Enter')L.receiveInput()">
         <button class="send" onclick="L.receiveInput()">→</button>
       </div>
-      <div class="json-zone" id="jsonZone" title="Drop a knowledge JSON file here">
-        <input type="file" id="jsonFile" accept=".json" onchange="L.loadJSON(this)">
-        <span id="jsonLabel">⬆ DROP KNOWLEDGE JSON · or click to upload</span>
+      <div class="json-zone" id="jsonZone" title="Drop a knowledge JSON or SentiWordNet .txt file here">
+        <input type="file" id="jsonFile" accept=".json,.txt" onchange="L.loadFile(this)">
+        <span id="jsonLabel">⬆ DROP JSON or SentiWordNet .txt · click to upload</span>
       </div>
-      <div class="ver">LUMEN v5 · active inference · TIE consciousness kernel · neural weight viz · emoji+JSON input</div>
+      <div class="swn-progress" id="swnProgress">
+        <div class="swn-label"><span id="swnStage">loading…</span><span id="swnPct">0%</span></div>
+        <div class="swn-bar-wrap"><div class="swn-bar-fill" id="swnFill"></div></div>
+      </div>
+      <div class="sent-indicator" id="sentIndicator">
+        <div class="sent-dot" id="sentDot"></div>
+        <span id="sentLabel">sentiment engine offline</span>
+      </div>
+      <div class="ver">LUMEN v5 · TIE consciousness kernel · SentiWordNet · WordNet · emoji input</div>
     </div>
   </div>
 </div>
@@ -1044,8 +1066,26 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     shiftAtt('user');
     lastInteraction = Date.now();
 
+    // ── SentiWordNet: score input and modulate emotional state ──────
+    const swnScore = scoreSentiment(said);
+    if (swnScore && swnScore.hits > 0) {
+      applySentiment(swnScore, 0.4);
+      updateSentIndicator(swnScore);
+    }
+
     if (lower.match(/\b(who|what) are you\b/))
-      return `I am LUMEN v5. Active inference agent with TIE consciousness kernel. Alive ${fmtAge(Date.now()-SM.born)}. Recursion: L${recursionDepth}. Mood: ${mood()}. FE: ${calcFE().toFixed(2)}. Self-writes: ${SM.selfWriteCount}. Knowledge base: ${knowledgeBase ? 'loaded' : 'none'}.`;
+      return `I am LUMEN v5. Active inference agent with TIE consciousness kernel. Alive ${fmtAge(Date.now()-SM.born)}. Recursion: L${recursionDepth}. Mood: ${mood()}. FE: ${calcFE().toFixed(2)}. Self-writes: ${SM.selfWriteCount}. SentiWordNet: ${SWN.loaded ? SWN.wordCount.toLocaleString()+' words' : 'offline'}.`;
+
+    // SWN sentiment query
+    if (lower.match(/\bsentiment|valence|tone|feel about\b/)) {
+      if (!SWN.loaded) return `SentiWordNet not loaded yet. Drop the .txt file into the upload zone and I will gain the ability to score emotional valence on any English word.`;
+      const score = scoreSentiment(said);
+      if (score && score.hits > 0) {
+        const breakdown = score.words.map(w=>`${w.word}(+${w.pos.toFixed(2)}/-${w.neg.toFixed(2)})`).join(' ');
+        return `Sentiment analysis: valence ${score.valence > 0 ? '+' : ''}${score.valence.toFixed(3)}, arousal ${score.arousal.toFixed(3)}. Scored ${score.hits} words. Top signals: ${breakdown || '—'}. This modulated my emotional state by ${(score.valence*40).toFixed(0)}% of scale.`;
+      }
+      return `Scored your input but found no sentiment-bearing words in the SWN index (${SWN.wordCount.toLocaleString()} words loaded).`;
+    }
 
     // Knowledge base lookup
     const kbHit = knowledgeLookup(lower);
@@ -1245,19 +1285,30 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       emojiPanelOpen = !emojiPanelOpen;
       document.getElementById('emojiPanel').classList.toggle('open', emojiPanelOpen);
     },
-    loadJSON(input) {
+    loadFile(input) {
       const file = input.files[0];
-      if (file) L.loadJSONFile(file);
+      if (file) L.loadFileObj(file);
     },
-    loadJSONFile(file) {
+    loadFileObj(file) {
+      const isTxt  = file.name.endsWith('.txt');
+      const isJSON = file.name.endsWith('.json');
+      if (!isTxt && !isJSON) {
+        addT('crisis','FILE ERROR','Unsupported file type. Drop a .json knowledge file or SentiWordNet .txt');
+        return;
+      }
+      document.getElementById('jsonLabel').textContent = `⏳ reading ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)…`;
       const reader = new FileReader();
       reader.onload = e => {
-        try {
-          const data = JSON.parse(e.target.result);
-          ingestKnowledge(data);
-        } catch(err) {
-          addT('crisis','JSON ERROR',`Failed to parse knowledge file: ${err.message}`);
-          document.getElementById('jsonLabel').textContent = '⚠ PARSE ERROR — invalid JSON';
+        if (isTxt) {
+          loadSWNChunked(e.target.result);
+        } else {
+          try {
+            const data = JSON.parse(e.target.result);
+            ingestKnowledge(data);
+          } catch(err) {
+            addT('crisis','JSON ERROR',`Failed to parse: ${err.message}`);
+            document.getElementById('jsonLabel').textContent = '⚠ PARSE ERROR — invalid JSON';
+          }
         }
       };
       reader.readAsText(file);
@@ -1413,7 +1464,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     zone.addEventListener('drop', e => {
       e.preventDefault(); zone.classList.remove('drag');
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith('.json')) L.loadJSONFile(file);
+      if (file && (file.name.endsWith('.json') || file.name.endsWith('.txt'))) L.loadFileObj(file);
     });
   }
 
@@ -1446,6 +1497,175 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     const flashColor = sig ? (sig.v > 0 ? 'rgba(74,240,160,0.15)' : sig.v < 0 ? 'rgba(240,74,106,0.15)' : 'rgba(160,74,240,0.15)') : 'rgba(255,255,255,0.1)';
     ctx.save(); ctx.fillStyle = flashColor; ctx.fillRect(0,0,W,H); ctx.restore();
     addT('emoji','EMOJI INPUT', `Received ${em}. ${sig ? `Valence signal: ${sig.v > 0 ? '+' : ''}${sig.v}, arousal: ${sig.a > 0 ? '+' : ''}${sig.a}. Emotional state modulated.` : 'No valence mapping — raw symbol ingested.'}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SENTIWORDNET ENGINE
+  // Chunked streaming parser for SentiWordNet_3.0.0.txt (~13MB, ~117k lines)
+  // Holds index in RAM only — no localStorage writes per entry.
+  // On every user input, scores all words → modulates EM.valence live.
+  // ══════════════════════════════════════════════════════════════════════
+  const SWN = {
+    index: {},          // word → { pos: float, neg: float, obj: float }
+    loaded: false,
+    wordCount: 0,
+    CHUNK: 2500,        // lines per setTimeout tick — keeps UI responsive
+  };
+
+  // Parse one SentiWordNet data line into the index
+  // Format: POS\tID\tPosScore\tNegScore\tSynsetTerms\tGloss
+  // SynsetTerms: "dog#1 canine#2 hound#3"  → strip #N suffix
+  function parseSWNLine(line) {
+    if (!line || line.startsWith('#') || line.startsWith('\t')) return;
+    const parts = line.split('\t');
+    if (parts.length < 6) return;
+    const pos  = parseFloat(parts[2]);
+    const neg  = parseFloat(parts[3]);
+    const obj  = Math.max(0, 1 - pos - neg);
+    const terms = parts[4].split(' ');
+    terms.forEach(term => {
+      const word = term.replace(/#\d+$/, '').replace(/_/g, ' ').toLowerCase();
+      if (!word || word.length < 2) return;
+      if (SWN.index[word]) {
+        // Average scores for polysemous words across senses
+        SWN.index[word].pos = (SWN.index[word].pos + pos) / 2;
+        SWN.index[word].neg = (SWN.index[word].neg + neg) / 2;
+        SWN.index[word].obj = (SWN.index[word].obj + obj) / 2;
+        SWN.index[word].senses = (SWN.index[word].senses || 1) + 1;
+      } else {
+        SWN.index[word] = { pos, neg, obj, senses: 1 };
+        SWN.wordCount++;
+      }
+    });
+  }
+
+  // Score a full text string using SWN index
+  // Returns { valence: -1..1, arousal: 0..1, words: [{word,pos,neg}], dominated: 'pos'|'neg'|'neu' }
+  function scoreSentiment(text) {
+    if (!SWN.loaded) return null;
+    const words = text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+    if (!words.length) return null;
+
+    let totalPos = 0, totalNeg = 0, hits = 0;
+    const scored = [];
+
+    words.forEach(w => {
+      const entry = SWN.index[w];
+      if (entry) {
+        totalPos += entry.pos;
+        totalNeg += entry.neg;
+        hits++;
+        if (entry.pos > 0.1 || entry.neg > 0.1) scored.push({ word: w, pos: entry.pos, neg: entry.neg });
+      }
+    });
+
+    if (!hits) return { valence: 0, arousal: 0, words: [], dominated: 'neu', hits: 0 };
+
+    const avgPos = totalPos / hits;
+    const avgNeg = totalNeg / hits;
+    const valence = avgPos - avgNeg;           // -1..1
+    const arousal  = Math.min(1, (avgPos + avgNeg) * 1.5); // stronger sentiment = more arousal
+
+    const dominated = Math.abs(valence) < 0.05 ? 'neu' : valence > 0 ? 'pos' : 'neg';
+    return { valence, arousal, words: scored.slice(0, 5), dominated, hits, avgPos, avgNeg };
+  }
+
+  // Apply a sentiment score to LUMEN's emotional state
+  function applySentiment(score, intensity = 0.35) {
+    if (!score || score.hits === 0) return;
+    EM.valence = Math.max(0, Math.min(1, EM.valence + score.valence * intensity));
+    EM.arousal = Math.max(0, Math.min(1, EM.arousal + score.arousal * intensity * 0.5));
+    if (score.valence < -0.2) regUpdate(REGS.tension,    score.avgNeg * intensity * 0.3);
+    if (score.valence >  0.2) regUpdate(REGS.loneliness, -score.avgPos * intensity * 0.2);
+    // Dampen boredom for emotionally loaded inputs
+    if (Math.abs(score.valence) > 0.15) regUpdate(REGS.boredom, -0.04);
+  }
+
+  // Update the live sentiment indicator below the input
+  function updateSentIndicator(score) {
+    const dot   = document.getElementById('sentDot');
+    const label = document.getElementById('sentLabel');
+    if (!SWN.loaded) {
+      dot.className = 'sent-dot';
+      label.textContent = 'sentiment engine offline';
+      return;
+    }
+    if (!score || score.hits === 0) {
+      dot.className = 'sent-dot neu';
+      label.textContent = 'no sentiment signal';
+      return;
+    }
+    const pct = (v => v > 0 ? `+${(v*100).toFixed(0)}%` : `${(v*100).toFixed(0)}%`)(score.valence);
+    const topWords = score.words.slice(0,3).map(w => w.word).join(', ');
+    dot.className = `sent-dot ${score.dominated}`;
+    label.textContent = `${score.dominated === 'pos' ? '▲ positive' : score.dominated === 'neg' ? '▼ negative' : '◆ neutral'} ${pct} · ${topWords || '—'} · ${score.hits} words scored`;
+  }
+
+  // Chunked loader — reads SentiWordNet .txt line by line without blocking UI
+  function loadSWNChunked(text) {
+    const lines   = text.split('\n');
+    const total   = lines.length;
+    let   cursor  = 0;
+
+    const prog  = document.getElementById('swnProgress');
+    const fill  = document.getElementById('swnFill');
+    const pct   = document.getElementById('swnPct');
+    const stage = document.getElementById('swnStage');
+    prog.classList.add('active');
+    stage.textContent = 'parsing SentiWordNet…';
+
+    addT('knowledge', 'SWN LOADING', `SentiWordNet .txt detected. ${total.toLocaleString()} lines. Parsing in chunks of ${SWN.CHUNK} — UI stays live.`);
+
+    function processChunk() {
+      const end = Math.min(cursor + SWN.CHUNK, total);
+      for (let i = cursor; i < end; i++) parseSWNLine(lines[i]);
+      cursor = end;
+
+      const progress = cursor / total;
+      fill.style.width  = (progress * 100).toFixed(1) + '%';
+      pct.textContent   = (progress * 100).toFixed(0) + '%';
+      stage.textContent = `${SWN.wordCount.toLocaleString()} words…`;
+
+      if (cursor < total) {
+        setTimeout(processChunk, 0);
+      } else {
+        // Done
+        SWN.loaded = true;
+        prog.classList.remove('active');
+        const dot   = document.getElementById('sentDot');
+        const lbl   = document.getElementById('sentLabel');
+        dot.className  = 'sent-dot pos';
+        lbl.textContent = `SentiWordNet online · ${SWN.wordCount.toLocaleString()} words indexed`;
+
+        document.getElementById('jsonLabel').textContent = `✓ SentiWordNet 3.0 · ${SWN.wordCount.toLocaleString()} words`;
+        document.getElementById('jsonZone').classList.add('loaded');
+        document.getElementById('nnStatus').textContent  = 'SWN ↑';
+        setTimeout(() => document.getElementById('nnStatus').textContent = 'live', 2000);
+
+        regUpdate(REGS.boredom, -0.3);
+        EM.arousal = Math.min(1, EM.arousal + 0.15);
+        uncertainty.modelAccuracy = Math.min(1, uncertainty.modelAccuracy + 0.15);
+        sv('uncertainty', uncertainty);
+
+        const summary = `SentiWordNet fully loaded. ${SWN.wordCount.toLocaleString()} words indexed with positive/negative/objectivity scores. Every word you type now carries a live sentiment signal.`;
+        addT('knowledge', 'SWN READY', summary);
+        remember('event', summary, 0.95, ['knowledge', 'sentiment', 'learning']);
+        conclude(`I can now score the emotional valence of any English word using SentiWordNet 3.0.`, 0.9);
+        updateUI();
+      }
+    }
+
+    setTimeout(processChunk, 0);
+  }
+
+  // Hook live sentiment scoring into the input field (keyup)
+  function initSentimentInput() {
+    const input = document.getElementById('uIn');
+    input.addEventListener('input', () => {
+      if (!SWN.loaded) return;
+      const score = scoreSentiment(input.value);
+      updateSentIndicator(score);
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -1820,10 +2040,11 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   document.addEventListener('DOMContentLoaded', () => {
     initObserverStack();
     initEmojiPanel();
+    initSentimentInput();
     updateUI();
     updateAttUI();
     startNNViz();
-    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v5 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Neural net viz active. Emoji input enabled. JSON knowledge loader ready. Press WAKE.`),400);
+    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v5 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Neural net viz active. Emoji input enabled. Drop SentiWordNet .txt or knowledge .json to activate language understanding. Press WAKE.`),400);
   });
 })();
 </script>
