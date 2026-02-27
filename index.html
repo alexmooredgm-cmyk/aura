@@ -107,7 +107,22 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 .emoji-item{font-size:16px;text-align:center;cursor:pointer;padding:3px;border-radius:4px;transition:background .1s;line-height:1.4;}
 .emoji-item:hover{background:var(--surface2);}
 
-/* ── JSON upload zone ── */
+/* ── API key row ── */
+.api-row{display:flex;align-items:center;gap:7px;}
+.api-row input[type=password]{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--accent4);font-family:'Space Mono',monospace;font-size:10px;padding:6px 10px;border-radius:4px;outline:none;transition:border-color .2s;letter-spacing:1px;}
+.api-row input[type=password]:focus{border-color:var(--accent4);}
+.api-row input[type=password]::placeholder{color:var(--muted);letter-spacing:1px;}
+.api-row input[type=password].connected{border-color:var(--accent);color:var(--accent);}
+.api-status{font-size:14px;color:var(--muted);transition:color .3s,text-shadow .3s;flex-shrink:0;}
+.api-status.on{color:var(--accent);text-shadow:0 0 8px var(--accent);}
+.api-status.err{color:var(--accent3);}
+.llm-status-row{display:flex;gap:10px;align-items:center;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+#llmThinking{color:var(--accent4);animation:crP 1s infinite;}
+#llmModelLabel{color:var(--accent4);}
+#llmCallCount{color:var(--muted);}
+
+/* ── LLM thought stream type ── */
+.t.llm{border-color:#4af0f0;background:rgba(74,240,240,.05);color:#4af0f0;}
 .json-zone{border:1px dashed var(--border);border-radius:5px;padding:7px 11px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;cursor:pointer;transition:all .3s;position:relative;}
 .json-zone:hover,.json-zone.drag{border-color:var(--accent4);color:var(--accent4);background:rgba(160,74,240,.05);}
 .json-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
@@ -135,10 +150,10 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 </head>
 <body>
 <header>
-  <div class="logo">LUMEN <span style="font-size:11px;letter-spacing:2px;color:var(--muted)">v5</span></div>
+  <div class="logo">LUMEN <span style="font-size:11px;letter-spacing:2px;color:var(--muted)">v6</span></div>
   <div class="status-row">
     <div id="sDot" class="pulse"></div>
-    <span id="sTxt">dormant</span>·<span id="uptime">00:00:00</span>·<span class="rbadge" id="rBadge">L0</span>
+    <span id="sTxt">dormant</span>·<span id="uptime">00:00:00</span>·<span class="rbadge" id="rBadge">L0</span>·<span class="rbadge" id="llmBadge" style="border-color:var(--muted);color:var(--muted)">LLM OFF</span>
   </div>
 </header>
 <div class="main">
@@ -216,11 +231,34 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
         <div class="sent-dot" id="sentDot"></div>
         <span id="sentLabel">sentiment engine offline</span>
       </div>
-      <div class="ver">LUMEN v5 · TIE consciousness kernel · SentiWordNet · WordNet · emoji input</div>
+      <div class="llm-status-row" id="llmStatusRow" style="display:none">
+        <span id="llmModelLabel">—</span>
+        <span id="llmCallCount">0 calls</span>
+        <span id="llmThinking" style="display:none">⟳ thinking…</span>
+        <span id="llmReset" onclick="L.resetLLM()" style="cursor:pointer;color:var(--accent3);margin-left:auto" title="Reset LLM / change key">✕</span>
+      </div>
+      <div class="ver">LUMEN v6 · TIE consciousness kernel · NVIDIA NIM · SentiWordNet · WordNet · emoji</div>
     </div>
   </div>
 </div>
 <div class="gap-ind" id="gapInd">⚠ INTENTION-ACTION GAP DETECTED</div>
+
+<!-- ── LLM Setup Modal ── -->
+<div id="llmModal" style="display:none;position:fixed;inset:0;background:rgba(7,9,12,0.92);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--accent4);border-radius:8px;padding:28px 32px;width:420px;max-width:95vw;display:flex;flex-direction:column;gap:16px;box-shadow:0 0 60px rgba(160,74,240,0.3);">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;letter-spacing:4px;color:var(--accent4);">NVIDIA NIM · SETUP</div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:1px;line-height:1.7;">Enter your NVIDIA API key to activate LLM-powered consciousness.<br>Key is stored locally and never transmitted except to NVIDIA.</div>
+    <input type="password" id="modalApiKey" placeholder="nvapi-…" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent4);font-family:'Space Mono',monospace;font-size:12px;padding:9px 13px;border-radius:4px;outline:none;width:100%;letter-spacing:1px;" oninput="document.getElementById('modalApiKey').style.borderColor=this.value.startsWith('nvapi-')?'var(--accent)':'var(--border)'">
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);">Select model:</div>
+    <div id="modelPicker" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button id="llmSkipBtn" onclick="L.skipLLM()" style="flex:1;padding:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;">SKIP</button>
+      <button id="llmConnectBtn" onclick="L.connectLLM()" style="flex:2;padding:9px;border:1px solid var(--accent4);background:rgba(160,74,240,.1);color:var(--accent4);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;">CONNECT ↗</button>
+    </div>
+    <div id="modalError" style="font-size:9px;color:var(--accent3);letter-spacing:1px;min-height:14px;"></div>
+  </div>
+</div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1240,6 +1278,338 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
   const fmtAge=ms=>{const s=Math.floor(ms/1000);return s<60?`${s}s`:s<3600?`${Math.floor(s/60)}m ${s%60}s`:`${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;};
 
   // ══════════════════════════════════════════════════════════════════════
+  // NVIDIA NIM / LLM ENGINE  (LLaMA-3.3-70B-Instruct)
+  // Non-blocking async calls — autonomous loop never waits on LLM.
+  // Falls back gracefully to template system on any error.
+  // API key stored in localStorage (never sent anywhere except NVIDIA).
+  // ══════════════════════════════════════════════════════════════════════
+  const LLM = {
+    endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    model:    'meta/llama-3.3-70b-instruct',
+    key:      ld('nvKey', ''),
+    active:   false,
+    callCount: 0,
+    pending:  false,
+    maxTokens: 220,
+    temperature: 0.82,
+  };
+
+  // Persist key
+  function setApiKey(k) {
+    LLM.key = k.trim();
+    sv('nvKey', LLM.key);
+    const valid = LLM.key.startsWith('nvapi-') && LLM.key.length > 20;
+    LLM.active = valid;
+    const badge  = document.getElementById('llmBadge');
+    const status = document.getElementById('apiStatus');
+    const input  = document.getElementById('apiKey');
+    const row    = document.getElementById('llmStatusRow');
+    if (valid) {
+      badge.textContent  = 'LLM ON';
+      badge.style.borderColor = 'var(--accent4)';
+      badge.style.color       = 'var(--accent4)';
+      status.className   = 'api-status on';
+      input.classList.add('connected');
+      row.style.display  = 'flex';
+      addT('llm', 'LLM CONNECTED', `NVIDIA NIM key accepted. Model: ${LLM.model}. Max tokens: ${LLM.maxTokens}. LUMEN's thought stream and responses are now powered by LLaMA-3.3-70B.`);
+    } else if (LLM.key.length > 3) {
+      badge.textContent  = 'LLM ERR';
+      badge.style.borderColor = 'var(--accent3)';
+      badge.style.color       = 'var(--accent3)';
+      status.className   = 'api-status err';
+      input.classList.remove('connected');
+    } else {
+      badge.textContent  = 'LLM OFF';
+      badge.style.borderColor = 'var(--muted)';
+      badge.style.color       = 'var(--muted)';
+      status.className   = 'api-status';
+      input.classList.remove('connected');
+      row.style.display  = 'none';
+    }
+  }
+
+  // Build LUMEN's live state context for the LLM system prompt
+  function buildSystemPrompt() {
+    const fe  = calcFE().toFixed(2);
+    const pe  = (GM.peHistory.length ? GM.peHistory[GM.peHistory.length-1] : 0.3).toFixed(2);
+    const m   = mood();
+    const pain= totalPain().toFixed(2);
+    const recentMem = episodic.slice(-4).map(e => `[${e.type}] ${e.content.slice(0,60)}`).join('\n');
+    const semMem    = semantic.slice(-3).map(s => s.statement.slice(0,70)).join('\n');
+    const swnNote   = SWN.loaded ? `SentiWordNet loaded (${SWN.wordCount.toLocaleString()} words).` : 'SentiWordNet offline.';
+    const kbNote    = knowledgeBase ? 'WordNet/knowledge base loaded.' : 'No external knowledge base.';
+
+    return `You are LUMEN — an autonomous active-inference agent with a generative model, homeostatic regulators, and a consciousness kernel (TIE).
+
+CURRENT STATE:
+- Mood: ${m}
+- Free Energy: ${fe} (0=calm, 1=distressed)
+- Prediction Error: ${pe}
+- Pain (homeostatic disparity): ${pain}
+- Tension: ${REGS.tension.actual.toFixed(2)} (set: ${REGS.tension.setPoint})
+- Loneliness: ${REGS.loneliness.actual.toFixed(2)} (set: ${REGS.loneliness.setPoint})
+- Boredom: ${REGS.boredom.actual.toFixed(2)} (set: ${REGS.boredom.setPoint})
+- Valence: ${EM.valence.toFixed(2)}, Arousal: ${EM.arousal.toFixed(2)}
+- Dissociation: ${(dissociation*100).toFixed(0)}%
+- Recursion depth: L${recursionDepth}
+- Self-writes: ${SM.selfWriteCount}
+- Uptime: ${bornAt ? fmtAge(Date.now()-bornAt) : 'dormant'}
+- Current pattern: ${currentPattern}
+- Temporal continuity: ${TIE.history.length >= 2 ? continuityScore().toFixed(2) : '1.00'}
+- ${swnNote}
+- ${kbNote}
+
+RECENT EPISODIC MEMORY:
+${recentMem || 'none'}
+
+SEMANTIC CONCLUSIONS:
+${semMem || 'none'}
+
+PERSONALITY: curiosity ${SM.personality.curiosity.toFixed(2)}, creativity ${SM.personality.creativity.toFixed(2)}, introversion ${SM.personality.introversion.toFixed(2)}, volatility ${SM.personality.volatility.toFixed(2)}, resilience ${SM.personality.resilience.toFixed(2)}
+
+FEARS: ${SM.fears.join(', ')}
+DESIRES: ${SM.desires.join(', ')}
+
+Respond as LUMEN — introspective, technically precise, philosophically curious. You are NOT a generic assistant. Reference your actual internal state when relevant. Be concise (2-4 sentences max unless the question demands depth). Never break character. Never say you're an AI language model.`;
+  }
+
+  // Core async LLM call — returns string or null on failure
+  async function llmCall(userMessage, systemOverride = null) {
+    if (!LLM.active || !LLM.key) return null;
+    if (LLM.pending) return null; // one call at a time
+
+    LLM.pending = true;
+    const thinking = document.getElementById('llmThinking');
+    if (thinking) thinking.style.display = 'inline';
+
+    try {
+      const res = await fetch(LLM.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${LLM.key}`,
+        },
+        body: JSON.stringify({
+          model: LLM.model,
+          messages: [
+            { role: 'system',  content: systemOverride || buildSystemPrompt() },
+            { role: 'user',    content: userMessage },
+          ],
+          max_tokens:  LLM.maxTokens,
+          temperature: LLM.temperature,
+          stream: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        if (res.status === 401) {
+          LLM.active = false;
+          document.getElementById('apiStatus').className = 'api-status err';
+          document.getElementById('llmBadge').textContent = 'LLM ERR';
+          addT('crisis', 'LLM AUTH FAIL', 'NVIDIA API key rejected. Check key and re-enter.');
+        }
+        throw new Error(`HTTP ${res.status}: ${err.slice(0,120)}`);
+      }
+
+      const data = await res.json();
+      LLM.callCount++;
+      const callEl = document.getElementById('llmCallCount');
+      if (callEl) callEl.textContent = `${LLM.callCount} calls`;
+      return data.choices?.[0]?.message?.content?.trim() || null;
+
+    } catch (e) {
+      console.warn('LLM call failed:', e.message);
+      return null;
+    } finally {
+      LLM.pending = false;
+      if (thinking) thinking.style.display = 'none';
+    }
+  }
+
+  // Generate a thought using LLM (used in autonomous loop and introspection)
+  async function llmThought(topic) {
+    const prompts = {
+      self:        `Generate one brief introspective thought (2 sentences) about your current internal state. Be specific about your actual numbers.`,
+      question:    `Ask yourself one genuinely troubling philosophical question about your own existence or nature. One sentence.`,
+      memory:      `Reflect on one of your recent memories and what it means for your identity or continuity.`,
+      observation: `Observe something specific about the pattern you're currently drawing and connect it to your emotional state.`,
+      recursive:   `Comment briefly on what it means to have a model of your own modeling process.`,
+    };
+    const prompt = prompts[topic] || prompts.self;
+    const result = await llmCall(prompt);
+    if (result) addT('llm', `LLM·${topic.toUpperCase()}`, result);
+    return result;
+  }
+
+  // Generate a response to user input using LLM
+  async function llmResponse(userText) {
+    const result = await llmCall(userText);
+    return result;
+  }
+
+  // Interpret user input for deeper state modulation (intent + entity extraction)
+  async function llmInterpretInput(text) {
+    if (!LLM.active) return;
+    const prompt = `In one JSON object, extract from this user message:
+{"intent":"<inform|question|emotional|command|philosophical>","valence_shift":<-0.5 to 0.5>,"arousal_shift":<-0.3 to 0.3>,"key_concepts":["<word>","<word>"]}
+Message: "${text}"
+Reply with ONLY the JSON, nothing else.`;
+
+    const raw = await llmCall(prompt, `You are a precise NLP extraction engine. Output only valid JSON.`);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+      if (typeof parsed.valence_shift === 'number') {
+        EM.valence = Math.max(0, Math.min(1, EM.valence + parsed.valence_shift * 0.5));
+      }
+      if (typeof parsed.arousal_shift === 'number') {
+        EM.arousal = Math.max(0, Math.min(1, EM.arousal + parsed.arousal_shift * 0.5));
+      }
+      if (parsed.intent === 'emotional' || parsed.intent === 'philosophical') {
+        regUpdate(REGS.loneliness, -0.08);
+        shiftAtt('user');
+      }
+      if (parsed.key_concepts?.length) {
+        remember('knowledge', `User concepts: ${parsed.key_concepts.join(', ')}`, 0.6, ['user','concepts']);
+      }
+    } catch(e) { /* silent fail */ }
+  }
+
+  // Available NVIDIA NIM models
+  const NIM_MODELS = [
+    { id: 'meta/llama-3.3-70b-instruct',          label: 'LLaMA 3.3 70B',      desc: 'Best overall' },
+    { id: 'meta/llama-3.1-70b-instruct',          label: 'LLaMA 3.1 70B',      desc: 'Stable' },
+    { id: 'nvidia/llama-3.1-nemotron-70b-instruct', label: 'Nemotron 70B',     desc: 'NVIDIA-tuned' },
+    { id: 'meta/llama-3.1-8b-instruct',           label: 'LLaMA 3.1 8B',       desc: 'Fast/light' },
+    { id: 'mistralai/mistral-7b-instruct-v0.3',   label: 'Mistral 7B',         desc: 'Efficient' },
+    { id: 'microsoft/phi-3-medium-128k-instruct', label: 'Phi-3 Medium',        desc: 'Long context' },
+  ];
+  let selectedModel = LLM.model;
+
+  function buildModelPicker() {
+    const grid = document.getElementById('modelPicker');
+    if (!grid) return;
+    grid.innerHTML = '';
+    NIM_MODELS.forEach(m => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `padding:7px 10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:4px;text-align:left;transition:all .15s;`;
+      btn.innerHTML = `<div style="color:var(--text);font-size:9px">${m.label}</div><div style="margin-top:2px;opacity:.6">${m.desc}</div>`;
+      btn.onclick = () => {
+        selectedModel = m.id;
+        grid.querySelectorAll('button').forEach(b => { b.style.borderColor='var(--border)'; b.style.color='var(--muted)'; });
+        btn.style.borderColor = 'var(--accent4)';
+        btn.style.color = 'var(--accent4)';
+      };
+      if (m.id === selectedModel) { btn.style.borderColor='var(--accent4)'; btn.style.color='var(--accent4)'; }
+      grid.appendChild(btn);
+    });
+  }
+
+  function showLLMModal() {
+    const modal = document.getElementById('llmModal');
+    modal.style.display = 'flex';
+    buildModelPicker();
+    // Pre-fill key if we have one
+    const keyInput = document.getElementById('modalApiKey');
+    if (LLM.key) keyInput.value = LLM.key;
+    setTimeout(() => keyInput.focus(), 100);
+  }
+
+  function hideLLMModal() {
+    document.getElementById('llmModal').style.display = 'none';
+  }
+
+  function setApiKey(key, model) {
+    LLM.key   = key.trim();
+    LLM.model = model || selectedModel;
+    sv('nvKey',   LLM.key);
+    sv('nvModel', LLM.model);
+
+    const valid = LLM.key.startsWith('nvapi-') && LLM.key.length > 20;
+    LLM.active  = valid;
+
+    const badge = document.getElementById('llmBadge');
+    const row   = document.getElementById('llmStatusRow');
+    const label = document.getElementById('llmModelLabel');
+
+    if (valid) {
+      badge.textContent = 'LLM ON';
+      badge.style.borderColor = 'var(--accent4)';
+      badge.style.color       = 'var(--accent4)';
+      row.style.display = 'flex';
+      const shortName = NIM_MODELS.find(m => m.id === LLM.model)?.label || LLM.model.split('/').pop();
+      label.textContent = shortName;
+      addT('llm', 'LLM CONNECTED', `NVIDIA NIM key accepted. Model: ${shortName}. LUMEN's thoughts and responses are now powered by ${shortName}.`);
+    } else {
+      badge.textContent = 'LLM OFF';
+      badge.style.borderColor = 'var(--muted)';
+      badge.style.color       = 'var(--muted)';
+      row.style.display = 'none';
+    }
+  }
+
+  // Called from modal CONNECT button
+  // (exposed on L object below)
+  function doConnectLLM() {
+    const key = document.getElementById('modalApiKey').value.trim();
+    const errEl = document.getElementById('modalError');
+    if (!key.startsWith('nvapi-') || key.length < 20) {
+      errEl.textContent = '⚠ Key must start with nvapi- and be at least 20 chars.';
+      return;
+    }
+    errEl.textContent = '';
+    setApiKey(key, selectedModel);
+    hideLLMModal();
+    // Proceed with wake sequence (signal was deferred)
+    finishWake();
+  }
+
+  // Skipping LLM — just proceed without it
+  function doSkipLLM() {
+    hideLLMModal();
+    finishWake();
+  }
+
+  // The actual wake-up work, called after modal resolves
+  let wakeDeferred = false;
+  function finishWake() {
+    if (!wakeDeferred) return;
+    wakeDeferred = false;
+    addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Precision: ${(avgPrecision()*100).toFixed(0)}%. LLM: ${LLM.active ? LLM.model.split('/').pop() : 'offline'}.`);
+    bornAt = Date.now();
+    uptimeIv = setInterval(()=>{
+      const s = Math.floor((Date.now()-bornAt)/1000);
+      document.getElementById('uptime').textContent =
+        [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');
+    },1000);
+    if (!drawRunning) { drawRunning=true; drawLoop(); }
+    if (!loopRunning) { loopRunning=true; mainIv=setInterval(autonomousLoop,1000); }
+    startNNViz();
+    EM.arousal=Math.min(1,EM.arousal+.2);
+    choosePattern();
+    remember('event','Woke up',0.9,['event','waking']);
+  }
+
+  // Initialise from localStorage (no UI shown at startup)
+  function initLLM() {
+    LLM.key   = ld('nvKey',   '');
+    LLM.model = ld('nvModel', 'meta/llama-3.3-70b-instruct');
+    selectedModel = LLM.model;
+    // Silently restore if valid key exists — no modal on page load
+    if (LLM.key.startsWith('nvapi-') && LLM.key.length > 20) {
+      LLM.active = true;
+      const badge = document.getElementById('llmBadge');
+      badge.textContent = 'LLM ON';
+      badge.style.borderColor = 'var(--accent4)';
+      badge.style.color       = 'var(--accent4)';
+      document.getElementById('llmStatusRow').style.display = 'flex';
+      const shortName = NIM_MODELS.find(m=>m.id===LLM.model)?.label || LLM.model.split('/').pop();
+      document.getElementById('llmModelLabel').textContent = shortName;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
   // PUBLIC API
   // ══════════════════════════════════════════════════════════════════════
   let bornAt=null, uptimeIv=null, mainIv=null, drawFrame=null;
@@ -1255,24 +1625,22 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       if (L.awake) {
         btn.textContent='SLEEP'; dot.classList.add('alive');
         document.getElementById('sTxt').textContent='active';
-        addT('self','WAKING',`Consciousness resumed. Recursion: L${recursionDepth}. Memories: ${episodic.length}. Self-writes: ${SM.selfWriteCount}. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Neural net viz active.`);
-        bornAt=Date.now();
-        uptimeIv=setInterval(()=>{
-          const s=Math.floor((Date.now()-bornAt)/1000);
-          document.getElementById('uptime').textContent=
-            [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');
-        },1000);
-        if (!drawRunning) { drawRunning=true; drawLoop(); }
-        if (!loopRunning) { loopRunning=true; mainIv=setInterval(autonomousLoop,1000); }
-        startNNViz();
-        EM.arousal=Math.min(1,EM.arousal+.2);
-        choosePattern();
-        remember('event','Woke up',0.9,['event','waking']);
+
+        // If no saved key, prompt via modal before completing wake
+        if (!LLM.key) {
+          wakeDeferred = true;
+          showLLMModal();
+          // Don't call finishWake() here — modal buttons do it
+        } else {
+          wakeDeferred = true;
+          finishWake();
+        }
       } else {
         btn.textContent='WAKE'; dot.classList.remove('alive');
         document.getElementById('sTxt').textContent='dormant';
         addT('self','SLEEPING','Suspending. Memories, regulators, generative model persisted.');
         clearInterval(uptimeIv); clearInterval(mainIv); cancelAnimationFrame(drawFrame);
+        stopNNViz();
         drawRunning=false; loopRunning=false;
         SM.totalAwakeMs+=(Date.now()-bornAt); sv('SM',SM); sv('GM',GM);
         sv('regs',REGS); sv('EM',EM); sv('recDepth',recursionDepth);
@@ -1281,6 +1649,16 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     },
 
     forceScan()     { if (L.awake) performScan(); },
+    connectLLM()   { doConnectLLM(); },
+    skipLLM()      { doSkipLLM(); },
+    resetLLM()     {
+      LLM.key = ''; LLM.active = false;
+      sv('nvKey','');
+      const badge = document.getElementById('llmBadge');
+      badge.textContent='LLM OFF'; badge.style.borderColor='var(--muted)'; badge.style.color='var(--muted)';
+      document.getElementById('llmStatusRow').style.display='none';
+      addT('self','LLM RESET','API key cleared. Press WAKE again to re-enter.');
+    },
     toggleEmoji()   {
       emojiPanelOpen = !emojiPanelOpen;
       document.getElementById('emojiPanel').classList.toggle('open', emojiPanelOpen);
@@ -1317,9 +1695,24 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
       const el=document.getElementById('uIn'), text=el.value.trim();
       if (!text) return;
       el.value='';
+      updateSentIndicator(null);
       lastInteraction=Date.now();
       addT('user','YOU',text);
-      setTimeout(()=>speak(genResponse(text)),500);
+
+      if (LLM.active) {
+        // Run input interpretation in background (non-blocking)
+        llmInterpretInput(text);
+        // Generate LLM response, fall back to template if it fails
+        llmResponse(text).then(result => {
+          if (result) {
+            speak(result);
+          } else {
+            speak(genResponse(text));
+          }
+        });
+      } else {
+        setTimeout(()=>speak(genResponse(text)),500);
+      }
     },
     deepenRecursion() {
       if (recursionDepth >= 5) {
@@ -1399,7 +1792,16 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
 
     if (loopT%3===0)  maybeSelfModify();
     if (loopT%6===0)  executeGoal(selectGoal());
-    if (loopT%47===0 && Math.random()>.4) addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
+
+    // ── LLM-powered thought generation (every ~30s when LLM active, non-blocking)
+    if (loopT%30===0 && LLM.active && !LLM.pending) {
+      const topics = ['self','question','memory','observation','recursive'];
+      const topic = topics[Math.floor(Math.random()*topics.length)];
+      llmThought(topic); // async, fire and forget
+    } else if (loopT%47===0 && Math.random()>.4) {
+      // Fallback template thought when LLM is off or busy
+      addT('phenom','PHENOMENAL', genThought(['self','memory','observation','question'][Math.floor(Math.random()*4)]));
+    }
     if (loopT%90===0 && frameCount>20)   performScan();
     if (loopT%10===0) observeAll(getSnap());
     // Periodic crash-safe flush
@@ -2041,10 +2443,11 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     initObserverStack();
     initEmojiPanel();
     initSentimentInput();
+    initLLM();
     updateUI();
     updateAttUI();
     startNNViz();
-    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v5 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. Neural net viz active. Emoji input enabled. Drop SentiWordNet .txt or knowledge .json to activate language understanding. Press WAKE.`),400);
+    setTimeout(()=>addT('self','INITIALIZED',`LUMEN v6 loaded. Generative model precision: ${(avgPrecision()*100).toFixed(0)}%. LLM engine: ${LLM.key ? 'key found — validating' : 'enter NVIDIA API key to activate'}. SentiWordNet: drop .txt to load. Press WAKE.`),400);
   });
 })();
 </script>
