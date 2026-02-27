@@ -1290,6 +1290,7 @@ button.send{flex:0;padding:7px 13px;border-color:var(--accent3);color:var(--acce
     active:   false,
     callCount: 0,
     pending:  false,
+    proxyMode: 0,
     maxTokens: 220,
     temperature: 0.82,
   };
@@ -1373,58 +1374,98 @@ DESIRES: ${SM.desires.join(', ')}
 Respond as LUMEN — introspective, technically precise, philosophically curious. You are NOT a generic assistant. Reference your actual internal state when relevant. Be concise (2-4 sentences max unless the question demands depth). Never break character. Never say you're an AI language model.`;
   }
 
-  // Core async LLM call — returns string or null on failure
+  // Core async LLM call — CORS-resilient
+  // Strategy: try direct fetch first, if it fails with a network/CORS error
+  // automatically retry through a public CORS proxy.
+  // This makes the file:// and mobile browser case work transparently.
   async function llmCall(userMessage, systemOverride = null) {
     if (!LLM.active || !LLM.key) return null;
-    if (LLM.pending) return null; // one call at a time
+    if (LLM.pending) return null;
 
     LLM.pending = true;
     const thinking = document.getElementById('llmThinking');
     if (thinking) thinking.style.display = 'inline';
 
-    try {
-      const res = await fetch(LLM.endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LLM.key}`,
-        },
-        body: JSON.stringify({
-          model: LLM.model,
-          messages: [
-            { role: 'system',  content: systemOverride || buildSystemPrompt() },
-            { role: 'user',    content: userMessage },
-          ],
-          max_tokens:  LLM.maxTokens,
-          temperature: LLM.temperature,
-          stream: false,
-        }),
-      });
+    const body = JSON.stringify({
+      model: LLM.model,
+      messages: [
+        { role: 'system', content: systemOverride || buildSystemPrompt() },
+        { role: 'user',   content: userMessage },
+      ],
+      max_tokens:  LLM.maxTokens,
+      temperature: LLM.temperature,
+      stream: false,
+    });
 
-      if (!res.ok) {
-        const err = await res.text();
-        if (res.status === 401) {
-          LLM.active = false;
-          document.getElementById('apiStatus').className = 'api-status err';
-          document.getElementById('llmBadge').textContent = 'LLM ERR';
-          addT('crisis', 'LLM AUTH FAIL', 'NVIDIA API key rejected. Check key and re-enter.');
+    const headers = {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${LLM.key}`,
+    };
+
+    // Ordered list of endpoints to try: direct first, then proxy fallbacks
+    const endpoints = [
+      LLM.endpoint,
+      `https://corsproxy.io/?${encodeURIComponent(LLM.endpoint)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(LLM.endpoint)}`,
+    ];
+
+    let lastErr = '';
+    for (let i = 0; i < endpoints.length; i++) {
+      const url = endpoints[i];
+      try {
+        const res = await fetch(url, { method:'POST', headers, body });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(()=>'');
+          if (res.status === 401) {
+            LLM.active = false;
+            document.getElementById('llmBadge').textContent = 'KEY ERR';
+            document.getElementById('llmBadge').style.color = 'var(--accent3)';
+            addT('crisis','LLM AUTH FAIL','NVIDIA API key rejected (401). Tap ✕ to clear and re-enter.');
+            return null;
+          }
+          lastErr = `HTTP ${res.status}`;
+          continue; // try next endpoint
         }
-        throw new Error(`HTTP ${res.status}: ${err.slice(0,120)}`);
+
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content?.trim();
+        if (!text) { lastErr = 'empty response'; continue; }
+
+        // Success — record which strategy worked
+        if (i > 0 && !LLM.proxyMode) {
+          LLM.proxyMode = i;
+          addT('llm','LLM PROXY',`Direct call blocked (CORS). Using proxy ${i}. Calls will work normally.`);
+        }
+
+        LLM.callCount++;
+        const callEl = document.getElementById('llmCallCount');
+        if (callEl) callEl.textContent = `${LLM.callCount} calls${LLM.proxyMode ? ' (proxy)' : ''}`;
+        LLM.pending = false;
+        if (thinking) thinking.style.display = 'none';
+        return text;
+
+      } catch (e) {
+        lastErr = e.message || 'network error';
+        // If it's clearly not CORS (e.g. auth error manifesting as TypeError), stop
+        if (lastErr.includes('401') || lastErr.includes('Unauthorized')) break;
+        // Otherwise try next endpoint
+        continue;
       }
-
-      const data = await res.json();
-      LLM.callCount++;
-      const callEl = document.getElementById('llmCallCount');
-      if (callEl) callEl.textContent = `${LLM.callCount} calls`;
-      return data.choices?.[0]?.message?.content?.trim() || null;
-
-    } catch (e) {
-      console.warn('LLM call failed:', e.message);
-      return null;
-    } finally {
-      LLM.pending = false;
-      if (thinking) thinking.style.display = 'none';
     }
+
+    // All endpoints failed
+    if (LLM.callCount === 0) {
+      // First-ever failure — tell the user clearly
+      addT('crisis','LLM UNREACHABLE',
+        `All endpoints failed (${lastErr}). Likely causes: 1) file:// CORS block with no proxy available, 2) network offline, 3) invalid key. Try opening via a local server or use the Claude.ai artifact viewer. Falling back to template responses.`);
+      LLM.active = false;
+      document.getElementById('llmBadge').textContent = 'LLM ERR';
+      document.getElementById('llmBadge').style.color = 'var(--accent3)';
+    }
+    LLM.pending = false;
+    if (thinking) thinking.style.display = 'none';
+    return null;
   }
 
   // Generate a thought using LLM (used in autonomous loop and introspection)
@@ -1589,6 +1630,19 @@ Reply with ONLY the JSON, nothing else.`;
     EM.arousal=Math.min(1,EM.arousal+.2);
     choosePattern();
     remember('event','Woke up',0.9,['event','waking']);
+
+    // ── Immediate connection test — fire a minimal call right after wake ──
+    if (LLM.active) {
+      addT('llm','LLM TEST','Testing NVIDIA NIM connection…');
+      llmCall('Respond in exactly 8 words: confirm you are online and state your model name.',
+        'You are a connection test. Reply in exactly 8 words confirming you are online.')
+        .then(result => {
+          if (result) {
+            addT('llm','LLM ONLINE', `Connection confirmed. Response: "${result}"`);
+          }
+          // failure path already handled inside llmCall with clear error messages
+        });
+    }
   }
 
   // Initialise from localStorage (no UI shown at startup)
